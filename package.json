@@ -1,0 +1,28 @@
+{
+  "name": "tworiversliving-site",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler dev",
+    "check": "astro check",
+    "db:local": "wrangler d1 migrations apply tworivers --local",
+    "db:remote": "wrangler d1 migrations apply tworivers --remote",
+    "deploy": "astro build && wrangler deploy"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "12.6.13",
+    "@astrojs/sitemap": "3.7.4",
+    "@fontsource-variable/manrope": "5.3.0",
+    "@fontsource-variable/newsreader": "5.3.0",
+    "@stripe/stripe-js": "7.10.0",
+    "astro": "5.18.2",
+    "stripe": "18.5.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "wrangler": "4.152.0"
+  }
+}
