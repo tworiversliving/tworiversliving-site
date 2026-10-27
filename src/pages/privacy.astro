@@ -1,0 +1,159 @@
+---
+import Legal from '../layouts/Legal.astro';
+import Text from '../components/Text.astro';
+import { site } from '../config/site';
+
+// Keep this in step with the code: retention periods are enforced by the daily job in src/lib/jobs.ts,
+// and the providers listed are the ones the site actually calls.
+---
+
+<Legal
+  title="Privacy policy"
+  description={`How ${site.name} collects, uses and protects your personal information when you book or get in touch.`}
+  updated="2026-10-27"
+  intro="This explains what personal information we collect when you book or get in touch, what we do with it, who we share it with and how long we keep it."
+>
+  <h2>Who we are</h2>
+  <p>
+    {site.legalName} is the controller of your personal information. We're registered in England and Wales, company no. <Text
+      text={site.companyNumber}
+    />, at <Text text={site.registeredOffice} />. We're registered with the Information Commissioner's Office, registration number <Text
+      text={site.icoNumber}
+    />.
+  </p>
+  <p>Questions about your information go to <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+
+  <h2>What we collect</h2>
+  <h3>When you book</h3>
+  <ul>
+    <li>Your name, email address and mobile number.</li>
+    <li>Your dates, number of guests, the extras you choose and the price.</li>
+    <li>Anything else you tell us: estimated arrival time, a note, and your company name if it's a work trip.</li>
+    <li>
+      When you ticked the box to accept the booking terms and house rules, which version you accepted, and the IP address you booked
+      from. We keep this as a record of what you agreed to.
+    </li>
+    <li>
+      Whether you have paid and any refund. Stripe takes your card details on its own form, so we never see or store them. We only see
+      the payment status and a payment reference.
+    </li>
+  </ul>
+
+  <h3>When you send an enquiry</h3>
+  <p>
+    Your name, email address, phone number if you give it, and what you tell us: dates, number of guests, company, the purpose of the stay,
+    whether you need an invoice and your message.
+  </p>
+
+  <h3>When you contact us directly</h3>
+  <p>Emails and WhatsApp messages you send us, and our replies.</p>
+
+  <h3>When you use the website</h3>
+  <p>
+    Cloudflare, which hosts the site, processes your IP address and browser details to deliver pages and protect the site from attacks.
+    We count visits with Cloudflare Web Analytics, which doesn't use cookies and doesn't identify you. The site also records booking
+    steps (such as a price being shown or a checkout being opened) without any personal details, so we can see how the booking process is
+    working. See the <a href="/cookies">cookie notice</a> for what is stored in your browser.
+  </p>
+
+  <h2>How we use it, and our legal basis</h2>
+  <div class="table">
+    <table>
+      <thead>
+        <tr><th scope="col">What we do</th><th scope="col">Legal basis</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            Take your booking and payment, add it to our booking calendar, send your confirmation, arrival details and other emails about
+            your stay, handle cancellations and refunds
+          </td>
+          <td>Performing our contract with you</td>
+        </tr>
+        <tr>
+          <td>Reply to your enquiry and send you a quote</td>
+          <td>Taking steps at your request before a contract, or our legitimate interest in answering questions about our homes</td>
+        </tr>
+        <tr>
+          <td>Keep booking and payment records</td>
+          <td>Legal obligation (company and tax law)</td>
+        </tr>
+        <tr>
+          <td>Keep a record of the terms you accepted, deal with damage or disputes</td>
+          <td>Our legitimate interest in protecting our business and the homes we look after</td>
+        </tr>
+        <tr>
+          <td>Check forms for spam and bots, keep the website secure</td>
+          <td>Our legitimate interest in running a safe website</td>
+        </tr>
+        <tr>
+          <td>After your stay, send one thank-you email with a way to book with us again</td>
+          <td>Our legitimate interest in welcoming guests back. Tell us and we won't send it</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>We don't sell your information, use it for advertising or make automated decisions about you.</p>
+
+  <h2>Who we share it with</h2>
+  <p>We use these providers to run the site and our bookings. Each only gets what it needs to do its job.</p>
+  <div class="table">
+    <table>
+      <thead>
+        <tr><th scope="col">Provider</th><th scope="col">What for</th><th scope="col">Where</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Stripe</td><td>Taking payments and refunds, and preventing fraud</td><td>UK, EU and US</td></tr>
+        <tr><td>Cloudflare</td><td>Website hosting, the booking database, spam checks on forms (Turnstile) and visit counts</td><td>Global network, US company</td></tr>
+        <tr><td>Resend</td><td>Sending booking and enquiry emails</td><td>US</td></tr>
+        <tr><td>Smoobu</td><td>Our booking calendar, which keeps every booking site in step</td><td>EU (German company)</td></tr>
+        <tr><td>Zoho Mail</td><td>Our email inbox</td><td>Zoho's EU or US data centres</td></tr>
+        <tr><td>Slack</td><td>Alerts to the hosts about new bookings and enquiries (name, dates and number of guests)</td><td>US</td></tr>
+        <tr><td>WhatsApp (Meta)</td><td>Messages, only if you message us there</td><td>US and other countries</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Stripe also uses payment information for its own fraud checks, as a separate controller under its own privacy policy. We may also
+    share information with our insurer if there is a claim, with professional advisers, or with the police or other authorities where the
+    law requires it.
+  </p>
+
+  <h2>Transfers outside the UK</h2>
+  <p>
+    Some of these providers handle information in the US or elsewhere outside the UK. Where they do, the transfer is covered by UK
+    adequacy rules (including the UK extension to the EU-US Data Privacy Framework) or by the UK's approved contract clauses.
+  </p>
+
+  <h2>How long we keep it</h2>
+  <ul>
+    <li><strong>Paid bookings:</strong> seven years after your stay, which covers the six years company and tax law ask for.</li>
+    <li><strong>Bookings that were never paid, and withdrawn requests:</strong> 12 months.</li>
+    <li><strong>Enquiries through the website:</strong> 12 months. If an enquiry becomes a booking, the booking record is kept as above.</li>
+    <li><strong>Emails and messages:</strong> as long as we need them to deal with your stay or any question about it, then deleted.</li>
+  </ul>
+  <p>Deleting old bookings and enquiries happens automatically.</p>
+
+  <h2>Your rights</h2>
+  <p>You can ask us to:</p>
+  <ul>
+    <li>give you a copy of the information we hold about you</li>
+    <li>correct anything that's wrong</li>
+    <li>delete your information, where we don't have to keep it</li>
+    <li>limit how we use it, or stop using it for something based on our legitimate interests</li>
+    <li>send it to you or another company in a common format</li>
+  </ul>
+  <p>
+    Email <a href={`mailto:${site.email}`}>{site.email}</a>. We'll reply within one month. If you're not happy with how we've handled your
+    information, you can complain to the Information Commissioner's Office at <a href="https://ico.org.uk/make-a-complaint/">ico.org.uk</a>
+    or on 0303 123 1113. We'd appreciate the chance to sort it out first.
+  </p>
+
+  <h2>Keeping it safe</h2>
+  <p>
+    The site runs over an encrypted connection, booking records are only open to the two of us, and card payments never reach our systems.
+  </p>
+
+  <h2>Changes</h2>
+  <p>If we change how we use your information, we'll update this page and the date at the top.</p>
+</Legal>

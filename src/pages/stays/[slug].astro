@@ -1,0 +1,402 @@
+---
+import Base from '../../layouts/Base.astro';
+import BookingPanel from '../../components/BookingPanel.astro';
+import Photo from '../../components/Photo.astro';
+import Reviews from '../../components/Reviews.astro';
+import Text from '../../components/Text.astro';
+import AreaMap from '../../components/AreaMap.astro';
+import { booking } from '../../config/booking';
+import { properties, type Property } from '../../data/properties';
+import { schemaImages } from '../../lib/og';
+import { lodging } from '../../lib/schema';
+
+export function getStaticPaths() {
+  return properties.map((property) => ({ params: { slug: property.slug }, props: { property } }));
+}
+
+interface Props {
+  property: Property;
+}
+
+const { property: p } = Astro.props;
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const specs = `${plural(p.guests, 'guest')} · ${plural(p.bedrooms, 'bedroom')} · ${plural(p.bathrooms, 'bathroom')}`;
+
+const hero = p.photos.find((ph) => ph.file === p.heroPhoto) ?? p.photos[0];
+const rooms = [...new Set(p.photos.map((ph) => ph.room))];
+// One photo per room after the hero, so the grid shows the whole flat rather than one room five times.
+const gallery = [hero, ...rooms.filter((r) => r !== hero.room && r !== 'Neighbourhood').map((r) => p.photos.find((ph) => ph.room === r)!)].slice(0, 5);
+const photoFor = (file?: string) => p.photos.find((ph) => ph.file === file);
+const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.file)))];
+---
+
+<Base
+  title={p.name}
+  description={`${p.summary} Sleeps ${p.guests}. Book direct with the hosts, with no booking fees.`}
+  ogPhoto={{ slug: p.slug, file: p.ogPhoto }}
+  schema={schema}
+  crumbs={[
+    { name: 'Stays', path: '/stays' },
+    { name: p.name, path: `/stays/${p.slug}` },
+  ]}
+>
+  <div class="container top">
+    <div class="gallery">
+      {
+        gallery.map((ph, i) => (
+          <Photo
+            slug={p.slug}
+            file={ph.file}
+            alt={ph.alt}
+            label={ph.room}
+            ratio="3 / 2"
+            sizes={i === 0 ? '(min-width: 960px) 600px, 100vw' : '(min-width: 960px) 300px, 50vw'}
+            eager={i === 0}
+            class={i === 0 ? 'gallery__main' : 'gallery__thumb'}
+          />
+        ))
+      }
+      <button type="button" class="button button--ghost gallery__all" data-open-photos>View all photos</button>
+    </div>
+  </div>
+
+  <div class="container layout">
+    <div class="content">
+      <header class="title">
+        <span class="kicker">{p.area}</span>
+        <h1>{p.name}</h1>
+        <p class="muted">
+          {specs} · {p.beds}
+          {p.reviews.length > 0 && <> · <a href="#reviews">{plural(p.reviews.length, 'review')}</a></>}
+        </p>
+      </header>
+
+      <section class="block">
+        {p.overview.map((para) => <p>{para}</p>)}
+      </section>
+
+      <section class="block" aria-labelledby="sleep">
+        <h2 id="sleep">Where you'll sleep</h2>
+        <div class="rooms">
+          {
+            p.sleeping.map((r) => {
+              const ph = photoFor(r.photo);
+              return (
+                <div class="room">
+                  <Photo slug={p.slug} file={r.photo} alt={ph?.alt ?? r.room} label={r.room} sizes="(min-width: 960px) 240px, 100vw" />
+                  <h3>{r.room}</h3>
+                  <p class="muted small">{r.bed}</p>
+                </div>
+              );
+            })
+          }
+        </div>
+      </section>
+
+      <section class="block" aria-labelledby="amenities">
+        <h2 id="amenities">What's in the flat</h2>
+        <ul class="ticks cols">
+          {p.amenities.top.map((a) => <li>{a}</li>)}
+        </ul>
+        <details class="all">
+          <summary class="text-link">Show all amenities</summary>
+          <div class="all__groups">
+            {
+              Object.entries(p.amenities.all).map(([group, items]) => (
+                <div>
+                  <h3>{group}</h3>
+                  <ul class="ticks">
+                    {items.map((a) => (
+                      <li>{a}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            }
+          </div>
+        </details>
+      </section>
+
+      <section class="block" aria-labelledby="working">
+        <h2 id="working">Working here</h2>
+        <ul class="ticks">
+          {p.working.map((w) => <li><Text text={w} /></li>)}
+        </ul>
+        <p><a class="text-link" href="/work-stays">Work and long stays</a></p>
+      </section>
+
+      <section class="block" aria-labelledby="location">
+        <h2 id="location">Location</h2>
+        <p>
+          {p.area}, {p.postcodeArea}. We send the exact address 48 hours before you arrive.
+        </p>
+        <AreaMap property={p} />
+        <dl class="times">
+          {
+            p.walkingTimes.map((w) => (
+              <div>
+                <dt>{w.place}</dt>
+                <dd>{w.time}</dd>
+              </div>
+            ))
+          }
+        </dl>
+        <p><a class="text-link" href={`/areas/${p.areaSlug}`}>Our {p.area} guide</a></p>
+      </section>
+
+      <section class="block" aria-labelledby="rules">
+        <h2 id="rules">Check-in and house rules</h2>
+        <p>Self check-in with a key lockbox. We send the details 48 hours before you arrive.</p>
+        <ul class="ticks">
+          {p.houseRules.map((r) => <li>{r}</li>)}
+        </ul>
+        <p><a href="/house-rules">Full house rules</a></p>
+      </section>
+
+      <section class="block" aria-labelledby="know">
+        <h2 id="know">Good to know</h2>
+        <ul class="ticks">
+          {p.goodToKnow.map((g) => <li>{g}</li>)}
+        </ul>
+      </section>
+
+      <section class="block" aria-labelledby="cancel">
+        <h2 id="cancel">Cancellation</h2>
+        <p>
+          Full refund if you cancel more than {booking.freeCancellationDays} days before check-in. <a href="/terms">Booking terms</a>
+        </p>
+      </section>
+
+      {
+        p.reviews.length > 0 && (
+          <section class="block" id="reviews" aria-labelledby="reviews-title">
+            <h2 id="reviews-title">Reviews</h2>
+            <Reviews reviews={p.reviews} />
+          </section>
+        )
+      }
+    </div>
+
+    <BookingPanel property={p} />
+  </div>
+
+  <div class="mobile-bar">
+    <p>From <strong data-from-price>£{p.fromPriceFallback}</strong> a night</p>
+    <a class="button" href="#book">Check availability</a>
+  </div>
+
+  <dialog class="viewer" data-photos aria-label="All photos">
+    <div class="viewer__head container">
+      <p class="display">{p.name}</p>
+      <button type="button" class="button button--ghost" data-close-photos>Close</button>
+    </div>
+    <div class="container">
+      {
+        rooms.map((room) => (
+          <section class="viewer__room">
+            <h2>{room}</h2>
+            <div class="viewer__grid">
+              {p.photos
+                .filter((ph) => ph.room === room)
+                .map((ph) => (
+                  <Photo slug={p.slug} file={ph.file} alt={ph.alt} label={ph.room} sizes="(min-width: 960px) 600px, 100vw" />
+                ))}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </dialog>
+</Base>
+
+<script>
+  const viewer = document.querySelector<HTMLDialogElement>('[data-photos]');
+  document.querySelector('[data-open-photos]')?.addEventListener('click', () => viewer?.showModal());
+  document.querySelector('[data-close-photos]')?.addEventListener('click', () => viewer?.close());
+</script>
+
+<style>
+  .top {
+    padding-top: calc(var(--header-h) + var(--s3));
+  }
+
+  .gallery {
+    position: relative;
+    display: grid;
+    gap: var(--s1);
+  }
+  .gallery :global(.gallery__thumb) {
+    display: none;
+  }
+  @media (min-width: 960px) {
+    .gallery {
+      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-rows: auto auto;
+    }
+    .gallery :global(.gallery__main) {
+      grid-row: span 2;
+      aspect-ratio: auto !important;
+    }
+    .gallery :global(.gallery__thumb) {
+      display: block;
+    }
+  }
+  .gallery__all {
+    position: absolute;
+    right: var(--s2);
+    bottom: var(--s2);
+    min-height: 40px;
+    background: var(--paper);
+  }
+
+  .layout {
+    display: grid;
+    gap: var(--s6);
+    padding-block: var(--s5) var(--section);
+  }
+  @media (min-width: 960px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: var(--s8);
+    }
+  }
+
+  .title h1 {
+    font-size: var(--text-2xl);
+  }
+
+  .block {
+    padding-block: var(--s5);
+    border-top: 1px solid var(--line);
+  }
+  .block h2 {
+    font-size: var(--text-xl);
+  }
+  .title + .block {
+    border-top: 0;
+  }
+
+  .rooms {
+    display: grid;
+    gap: var(--s3);
+  }
+  @media (min-width: 640px) {
+    .rooms {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .room h3 {
+    margin: var(--s2) 0 0.25rem;
+    font-size: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .cols {
+      columns: 2;
+      column-gap: var(--s4);
+    }
+    .cols li {
+      break-inside: avoid;
+    }
+  }
+
+  .all summary {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .all__groups {
+    display: grid;
+    gap: var(--s3);
+    margin-top: var(--s3);
+  }
+  @media (min-width: 640px) {
+    .all__groups {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .all h3 {
+    font-size: 1rem;
+    margin-bottom: var(--s1);
+  }
+
+  .times {
+    margin: 0 0 var(--s2);
+  }
+  .times div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s2);
+    padding: var(--s1) 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .times dd {
+    margin: 0;
+    color: var(--forest-soft);
+  }
+
+  .mobile-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+    padding: var(--s1) var(--gutter);
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+  }
+  .mobile-bar p {
+    margin: 0;
+  }
+  @media (min-width: 960px) {
+    .mobile-bar {
+      display: none;
+    }
+  }
+
+  .viewer {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0 0 var(--s8);
+    border: 0;
+    background: var(--mist);
+    color: var(--forest);
+  }
+  .viewer::backdrop {
+    background: var(--mist);
+  }
+  .viewer__head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: var(--s2);
+    background: var(--mist);
+    border-bottom: 1px solid var(--line);
+  }
+  .viewer__head p {
+    margin: 0;
+    font-size: var(--text-lg);
+  }
+  .viewer__room {
+    padding-top: var(--s5);
+  }
+  .viewer__room h2 {
+    font-size: var(--text-xl);
+  }
+  .viewer__grid {
+    display: grid;
+    gap: var(--s2);
+  }
+  @media (min-width: 768px) {
+    .viewer__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

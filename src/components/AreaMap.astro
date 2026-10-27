@@ -1,0 +1,52 @@
+---
+// A static map with a circle over the rough area, never a pin on the building.
+// Tiles come from public/maps/<slug>/ (fetch them with `node scripts/map-tiles.mjs`).
+import { MAP, mapLayout } from '../lib/map';
+import type { Property } from '../data/properties';
+
+interface Props {
+  property: Property;
+}
+
+const { property: p } = Astro.props;
+const { tiles, cx, cy, r } = mapLayout(p.map);
+---
+
+<figure class="map">
+  <svg viewBox={`0 0 ${MAP.width} ${MAP.height}`} role="img" aria-label={`Map of ${p.area}. The circle shows roughly where the flat is.`}>
+    <g class="map__tiles">
+      {tiles.map((t) => <image href={`/maps/${p.slug}/${t.file}`} x={t.dx} y={t.dy} width={MAP.tileSize} height={MAP.tileSize} />)}
+    </g>
+    <circle cx={cx} cy={cy} r={r} class="map__area" />
+  </svg>
+  <figcaption class="small muted">
+    The flat is somewhere inside the circle. Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>.
+  </figcaption>
+</figure>
+
+<style>
+  .map {
+    margin: 0 0 var(--s3);
+  }
+  .map svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  /* Mute the OSM colours so the map sits with the palette */
+  .map__tiles {
+    filter: grayscale(0.85) sepia(0.15) contrast(0.95);
+  }
+  .map__area {
+    fill: var(--brass);
+    fill-opacity: 0.22;
+    stroke: var(--brass-deep);
+    stroke-width: 2;
+  }
+  figcaption {
+    margin-top: var(--s1);
+  }
+</style>

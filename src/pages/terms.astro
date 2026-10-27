@@ -1,0 +1,171 @@
+---
+import Legal from '../layouts/Legal.astro';
+import Text from '../components/Text.astro';
+import { booking, extras } from '../config/booking';
+import { site } from '../config/site';
+
+// The page date is the terms version, so what a guest agreed to (bookings.terms_version) matches what's shown here.
+// Bump booking.termsVersion whenever anything below changes.
+const pounds = (pence: number) => `£${pence / 100}`;
+const days = booking.freeCancellationDays;
+---
+
+<Legal
+  title="Booking terms"
+  description={`The terms for booking a ${site.name} home direct: payment, cancellation, check-in and looking after the home.`}
+  updated={booking.termsVersion}
+  intro="These terms and our house rules are the agreement between you and us when you book on this website. Please read them before you book."
+>
+  <h2>1. Who we are</h2>
+  <p>
+    {site.legalName}, registered in England and Wales, company no. <Text text={site.companyNumber} />. Registered office: <Text
+      text={site.registeredOffice}
+    />.
+  </p>
+  <p>
+    Email <a href={`mailto:${site.email}`}>{site.email}</a>{site.phoneHref ? <>, phone <a href={site.phoneHref}>{site.phone}</a></> : ''}.
+    In these terms, "we" and "us" means {site.legalName}. "You" means the person making the booking, who must be one of the guests.
+  </p>
+
+  <h2>2. Making a booking</h2>
+  <ul>
+    <li>You must be 18 or over and staying in the home yourself.</li>
+    <li>
+      You can book up to {booking.maxInstantNights} nights on the website. Your booking is confirmed when your payment goes through and
+      we email you a confirmation with your booking reference.
+    </li>
+    <li>
+      Sometimes the website takes a booking request instead of a payment. A request doesn't reserve the dates and costs nothing. We
+      reply by email, and the booking is only confirmed once you have paid using the payment link we send.
+    </li>
+    <li>
+      Stays of {booking.maxInstantNights + 1} to {booking.maxNights} nights are booked by enquiry. We send a quote and a short booking
+      agreement to sign. Where that agreement differs from these terms, the agreement applies. We don't take stays longer than {
+        booking.maxNights
+      } nights.
+    </li>
+    <li>Check your confirmation email and tell us straight away if anything in it is wrong.</li>
+  </ul>
+
+  <h2>3. Price and payment</h2>
+  <ul>
+    <li>
+      The total shown before you pay is the full price: the nightly rates plus any extras you choose. There is no booking fee, cleaning
+      fee or other charge added later. Prices are in pounds sterling.
+    </li>
+    <li>You pay in full when you book, by card, Apple Pay or Google Pay. Payments are handled by Stripe, so we never see your card details.</li>
+    <li>We don't take a security deposit.</li>
+  </ul>
+
+  <h3>Extras</h3>
+  <ul>
+    {
+      extras.map((e) => (
+        <li>
+          {e.label}, {pounds(e.price)} per {e.per}. {e.description}
+        </li>
+      ))
+    }
+  </ul>
+  <p>Once you have paid for an extra, it is part of your booking and we will provide it.</p>
+
+  <h2>4. What your booking gives you</h2>
+  <p>
+    Your booking lets you and the guests named on it stay in the home for a holiday or work trip on the dates booked. It is a licence to
+    occupy, not a tenancy, and your main home must be somewhere else. It gives you no right to stay past your checkout date.
+  </p>
+
+  <h2>5. If you cancel</h2>
+  <ul>
+    <li>
+      <strong>More than {days} days before check-in:</strong> full refund, including extras. The free cancellation window closes at {
+        booking.checkInTime
+      } UK time, {days} days before your arrival date. Your confirmation email shows the exact date.
+    </li>
+    <li>
+      <strong>Within {days} days of check-in, or if you don't arrive:</strong> no refund. If you need to cancel late, get in touch anyway
+      and we'll see what we can do, but we can't promise a refund.
+    </li>
+    <li><strong>Leaving early:</strong> no refund for nights you don't use.</li>
+  </ul>
+  <p>
+    You can cancel yourself on the <a href="/booking">manage booking</a> page with your booking reference and email, or by emailing us.
+    Refunds go back to the card you paid with. Your bank usually shows them within 5 to 10 working days.
+  </p>
+  <p>
+    The Consumer Contracts Regulations 2013 give a 14-day right to cancel many things bought online. That right does not apply to
+    accommodation booked for specific dates, so the cancellation terms above apply instead.
+  </p>
+
+  <h2>6. Changing your booking</h2>
+  <p>
+    Email us if you want to change your dates or the number of guests. We'll make the change if the home is free, and you pay or are
+    refunded the difference in price. We can't promise a change will be possible.
+  </p>
+
+  <h2>7. If we have to cancel</h2>
+  <p>
+    We'll only cancel if we have to: for example, if the same nights were booked elsewhere at the same moment as yours, or if something
+    outside our control (such as a flood or a serious fault) means the home can't be used. If that happens we'll tell you as soon as we
+    can and refund everything you paid in full.
+  </p>
+
+  <h2>8. Check-in and checkout</h2>
+  <ul>
+    <li>Check-in is from {booking.checkInTime} and checkout is by {booking.checkOutTime}, unless you've booked early check-in or late checkout.</li>
+    <li>
+      Check-in is self check-in with a key lockbox. We email the address, the lockbox code and directions 48 hours before you arrive, so
+      make sure the email address and mobile number on your booking are right.
+    </li>
+  </ul>
+
+  <h2>9. Looking after the home</h2>
+  <ul>
+    <li>Our <a href="/house-rules">house rules</a> are part of these terms.</li>
+    <li>Only the number of guests on your booking may stay, and never more than the home sleeps. You can't sublet or pass the booking to anyone else.</li>
+    <li>
+      Tell us about any damage or breakage as soon as it happens. If you or your group damage the home or its contents beyond normal
+      wear and tear, we'll send you photos and the cost of the repair or replacement, and ask you to pay it.
+    </li>
+    <li>
+      If you or your group seriously break the house rules (for example, by holding a party, bringing more guests than booked or smoking
+      in the flat), we may ask you to leave without a refund.
+    </li>
+    <li>
+      We won't come into the home during your stay without arranging it with you first, except in an emergency or to deal with an
+      urgent problem such as a leak.
+    </li>
+  </ul>
+
+  <h2>10. Problems during your stay</h2>
+  <p>
+    If something isn't right, tell us straight away by email{site.phoneHref ? ', phone or WhatsApp' : ''} and we'll put it right as quickly
+    as we can. It is much easier to fix a problem while you're there than after you've left.
+  </p>
+
+  <h2>11. Our responsibility to you</h2>
+  <p>
+    We are responsible for loss or damage you suffer that is a foreseeable result of us breaking these terms or failing to use reasonable
+    care and skill. We are not responsible for loss that wasn't foreseeable, or for business losses such as lost profit.
+  </p>
+  <p>
+    We aren't responsible for loss of or damage to your belongings unless it's caused by our negligence. Nothing in these terms limits
+    our liability for death or personal injury caused by our negligence, for fraud, or for anything else the law doesn't allow us to
+    limit. None of this affects your legal rights as a consumer.
+  </p>
+
+  <h2>12. Your information</h2>
+  <p>We use your details to manage your booking. Our <a href="/privacy">privacy policy</a> explains what we keep and why.</p>
+
+  <h2>13. Complaints and the law</h2>
+  <p>
+    If you're unhappy with anything, email <a href={`mailto:${site.email}`}>{site.email}</a> and we'll do our best to put it right. These terms
+    are governed by the law of England and Wales. You can bring a claim in the courts of England and Wales, or in Scotland or Northern
+    Ireland if you live there.
+  </p>
+
+  <h2>14. Changes to these terms</h2>
+  <p>
+    We may update these terms. Your booking is covered by the version you agreed to when you booked. This is version {booking.termsVersion}.
+  </p>
+</Legal>

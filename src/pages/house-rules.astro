@@ -1,0 +1,84 @@
+---
+import Legal from '../layouts/Legal.astro';
+import { booking } from '../config/booking';
+import { site } from '../config/site';
+import { properties } from '../data/properties';
+
+// The per-home rules come from src/data/properties.ts, so the property page and this page can't disagree.
+// These rules are part of the booking terms (/terms, section 9): bump booking.termsVersion when they change.
+const multiple = properties.length > 1;
+---
+
+<Legal
+  title="House rules"
+  kicker="Before you stay"
+  description={`The house rules for ${site.name} homes: check-in times, guests, noise, smoking and pets.`}
+  updated={booking.termsVersion}
+  intro="Our homes are in residential buildings with neighbours close by. These rules keep it that way, and they're part of the booking terms you agree to."
+>
+  {
+    properties.map((p) => (
+      <section>
+        <h2>{multiple ? p.name : 'The rules'}</h2>
+        <ul>
+          {p.houseRules.map((r) => (
+            <li>{r}</li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+
+  <h2>Arriving and leaving</h2>
+  <ul>
+    <li>
+      Check-in is self check-in with a key lockbox. We email the address, the lockbox code and directions 48 hours before you arrive.
+      Please don't share the code with anyone outside your group.
+    </li>
+    <li>Please leave by {booking.checkOutTime} on your last day, unless you've booked late checkout. Leaving instructions are in your arrival email.</li>
+  </ul>
+
+  <h2>Guests</h2>
+  <ul>
+    <li>Only the people on your booking may stay overnight, up to the number of guests you booked.</li>
+    <li>Parties and events aren't allowed, whatever the size.</li>
+  </ul>
+
+  <h2>Noise and neighbours</h2>
+  <p>
+    Please keep noise down from 22:00 to 08:00, and be considerate in the shared entrance and stairs at any time. Our neighbours are the
+    reason the flat is a quiet place to stay.
+  </p>
+
+  <h2>Smoking and pets</h2>
+  <ul>
+    <li>No smoking anywhere in the flat.</li>
+    <li>No pets. Assistance dogs are welcome: please tell us when you book.</li>
+  </ul>
+
+  <h2>Looking after the home</h2>
+  <ul>
+    <li>
+      If something breaks or stops working, tell us straight away so we can fix it. Accidents happen, and telling us early is always better.
+    </li>
+    <li>Damage beyond normal wear and tear is covered in section 9 of the <a href="/terms">booking terms</a>.</li>
+  </ul>
+
+  <h2>Good to know</h2>
+  {
+    properties.map((p) => (
+      <section>
+        {multiple && <h3>{p.name}</h3>}
+        <ul>
+          {p.goodToKnow.map((g) => (
+            <li>{g}</li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+
+  <p>
+    Questions before you book? Email <a href={`mailto:${site.email}`}>{site.email}</a>.
+  </p>
+</Legal>

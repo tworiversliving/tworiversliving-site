@@ -1,0 +1,134 @@
+---
+import Base from '../../layouts/Base.astro';
+import Photo from '../../components/Photo.astro';
+import PropertyCard from '../../components/PropertyCard.astro';
+import Text from '../../components/Text.astro';
+import { areas, type Area } from '../../data/areas';
+import { properties } from '../../data/properties';
+
+export function getStaticPaths() {
+  return areas.map((area) => ({ params: { slug: area.slug }, props: { area } }));
+}
+
+interface Props {
+  area: Area;
+}
+
+const { area } = Astro.props;
+const homes = properties.filter((p) => p.areaSlug === area.slug);
+const source = properties.find((p) => p.slug === area.propertySlug);
+const walking = source?.walkingTimes ?? [];
+const areaPhoto = area.sections.flatMap((s) => s.photos ?? [])[0];
+---
+
+<Base
+  title={`${area.name} guide`}
+  description={area.description}
+  ogPhoto={areaPhoto ? { slug: area.propertySlug, file: areaPhoto } : undefined}
+>
+  <div class="container narrow page-head">
+    <span class="kicker">Area guide</span>
+    <h1>{area.name}</h1>
+    {area.intro.map((para) => <p>{para}</p>)}
+  </div>
+
+  <div class="container narrow">
+    {
+      walking.length > 0 && (
+        <dl class="times">
+          {walking.map((w) => (
+            <div>
+              <dt>{w.place}</dt>
+              <dd>{w.time}</dd>
+            </div>
+          ))}
+        </dl>
+      )
+    }
+
+    {
+      area.sections.map((s) => (
+        <section class="part">
+          <h2>{s.title}</h2>
+          <p>
+            <Text text={s.intro} />
+          </p>
+          {s.items.length > 0 && (
+            <ul class="places">
+              {s.items.map((i) => (
+                <li>
+                  <strong>{i.name}</strong>
+                  <span class="muted">
+                    <Text text={i.note} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {source &&
+            s.photos?.map((file) => {
+              const ph = source.photos.find((x) => x.file === file);
+              return <Photo slug={source.slug} file={file} alt={ph?.alt ?? ''} label={ph?.room} sizes="(min-width: 800px) 760px, 100vw" />;
+            })}
+        </section>
+      ))
+    }
+  </div>
+
+  {
+    homes.length > 0 && (
+      <section class="section">
+        <div class="container">
+          <h2>Stay in {area.name}</h2>
+          <div class="homes">
+            {homes.map((p) => (
+              <PropertyCard property={p} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+</Base>
+
+<style>
+  .times {
+    margin: 0 0 var(--s4);
+  }
+  .times div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s2);
+    padding: var(--s1) 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .times dd {
+    margin: 0;
+    color: var(--forest-soft);
+  }
+  .part {
+    padding-block: var(--s5);
+    border-top: 1px solid var(--line);
+  }
+  .part h2 {
+    font-size: var(--text-xl);
+  }
+  .places {
+    margin: 0 0 var(--s3);
+    padding: 0;
+    list-style: none;
+  }
+  .places li {
+    display: grid;
+    padding-block: var(--s1);
+  }
+  .homes {
+    display: grid;
+    gap: var(--s4);
+  }
+  @media (min-width: 768px) {
+    .homes {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>

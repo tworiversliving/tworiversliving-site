@@ -1,0 +1,233 @@
+---
+import { nav, site } from '../config/site';
+
+interface Props {
+  overlay?: boolean;
+}
+
+const { overlay = false } = Astro.props;
+const path = Astro.url.pathname.replace(/\/$/, '');
+const isCurrent = (href: string) => path === href || path.startsWith(`${href}/`);
+---
+
+<header class:list={['header', { 'header--overlay': overlay }]} data-header>
+  <div class="container header__inner">
+    <a href="/" class="header__logo" aria-label={`${site.name}, home`}>
+      <img class="logo logo--dark" src="/brand/logo-horizontal.svg" alt="" width="180" height="40" />
+      {overlay && <img class="logo logo--light" src="/brand/logo-horizontal-light.svg" alt="" width="180" height="40" />}
+    </a>
+
+    <nav class="header__nav" aria-label="Main">
+      <ul>
+        {
+          nav.map((item) => (
+            <li>
+              <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <a href="/stays" class="button header__cta">Book direct</a>
+
+    <button class="header__toggle" type="button" aria-expanded="false" aria-controls="menu" data-menu-toggle>
+      <span class="header__toggle-label">Menu</span>
+    </button>
+  </div>
+
+  <div class="menu" id="menu" hidden data-menu>
+    <nav class="container" aria-label="Main">
+      <ul>
+        {
+          nav.map((item) => (
+            <li>
+              <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <a href="/stays" class="button button--block">Book direct</a>
+      <p class="small muted">
+        <a href={`mailto:${site.email}`}>{site.email}</a>
+      </p>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const menu = document.querySelector<HTMLElement>('[data-menu]');
+
+  if (header) {
+    const onScroll = () => header.classList.toggle('is-solid', window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  if (header && toggle && menu) {
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.querySelector('span')!.textContent = open ? 'Close' : 'Menu';
+      menu.hidden = !open;
+      header.classList.toggle('is-open', open);
+      document.body.style.overflow = open ? 'hidden' : '';
+    };
+    toggle.addEventListener('click', () => setOpen(menu.hidden));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !menu.hidden) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+  }
+</script>
+
+<style>
+  .header {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 50;
+    background: var(--mist);
+    border-bottom: 1px solid var(--line);
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+
+  .header__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    height: var(--header-h);
+  }
+
+  .header__logo {
+    position: relative;
+    flex-shrink: 0;
+    margin-right: auto;
+  }
+  .logo {
+    width: 160px;
+    height: auto;
+  }
+  .logo--light {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+
+  .header__nav {
+    display: none;
+  }
+  .header__nav ul {
+    display: flex;
+    gap: var(--s3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .header__nav a {
+    color: var(--forest);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    padding-block: var(--s1);
+    border-bottom: 1px solid transparent;
+  }
+  .header__nav a:hover,
+  .header__nav a[aria-current='page'] {
+    border-bottom-color: var(--brass);
+  }
+
+  .header__cta {
+    display: none;
+    min-height: 40px;
+    padding-inline: var(--s2);
+  }
+
+  .header__toggle {
+    min-height: 44px;
+    padding: 0 var(--s2);
+    border: 1px solid var(--forest);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--forest);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  @media (min-width: 960px) {
+    .header__nav,
+    .header__cta {
+      display: flex;
+    }
+    .header__toggle {
+      display: none;
+    }
+  }
+
+  /* Over the home hero: transparent with light logo and text, solid once scrolled */
+  .header--overlay:not(.is-solid):not(.is-open) {
+    background: transparent;
+    border-bottom-color: transparent;
+  }
+  .header--overlay:not(.is-solid):not(.is-open) .logo--dark {
+    opacity: 0;
+  }
+  .header--overlay:not(.is-solid):not(.is-open) .logo--light {
+    opacity: 1;
+  }
+  .header--overlay:not(.is-solid):not(.is-open) .header__nav a,
+  .header--overlay:not(.is-solid):not(.is-open) .header__toggle {
+    color: var(--mist);
+    border-color: var(--mist);
+  }
+  .header--overlay:not(.is-solid):not(.is-open) .header__nav a {
+    border-bottom-color: transparent;
+  }
+  .header--overlay:not(.is-solid):not(.is-open) .header__nav a:hover {
+    border-bottom-color: var(--brass);
+  }
+  .header--overlay:not(.is-solid):not(.is-open) .header__cta {
+    background: var(--mist);
+    border-color: var(--mist);
+    color: var(--forest);
+  }
+
+  /* Mobile menu: full-screen mist panel */
+  .menu {
+    position: fixed;
+    inset: var(--header-h) 0 0;
+    background: var(--mist);
+    overflow-y: auto;
+    padding-block: var(--s4);
+  }
+  .menu ul {
+    margin: 0 0 var(--s4);
+    padding: 0;
+    list-style: none;
+  }
+  .menu li {
+    border-bottom: 1px solid var(--line);
+  }
+  .menu li a {
+    display: block;
+    padding: var(--s2) 0;
+    font-family: var(--font-serif);
+    font-size: var(--text-xl);
+    color: var(--forest);
+    text-decoration: none;
+  }
+  .menu li a[aria-current='page'] {
+    color: var(--brass-deep);
+  }
+  .menu p {
+    margin-top: var(--s3);
+  }
+</style>

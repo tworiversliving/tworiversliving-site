@@ -1,0 +1,521 @@
+---
+// Checkout: stay, extras, guest details, then Stripe Embedded Checkout (or a booking request when
+// Stripe isn't set up). Static page; dates come from the query string and are priced by /api/quote.
+import Base from '../../layouts/Base.astro';
+import Photo from '../../components/Photo.astro';
+import { booking, extras } from '../../config/booking';
+import { properties, type Property } from '../../data/properties';
+
+export function getStaticPaths() {
+  return properties.map((property) => ({ params: { slug: property.slug }, props: { property } }));
+}
+
+interface Props {
+  property: Property;
+}
+
+const { property: p } = Astro.props;
+const offered = extras.filter((e) => p.extras.includes(e.id));
+const arrivalTimes = ['15:00 to 16:00', '16:00 to 17:00', '17:00 to 18:00', '18:00 to 19:00', '19:00 to 20:00', '20:00 to 21:00', '21:00 to 22:00', 'After 22:00', 'Not sure yet'];
+const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
+---
+
+<Base title="Book your stay" description={`Book ${p.name} direct.`} noindex>
+  <div class="container book" data-book data-slug={p.slug} data-checkin-time={booking.checkInTime} data-cancel-days={booking.freeCancellationDays}>
+    <div class="steps">
+      <a class="small text-link back" href={`/stays/${p.slug}#book`} data-back>Back to the flat</a>
+      <h1 data-title>Confirm and pay</h1>
+
+      <div class="notice" data-problem hidden>
+        <p data-problem-text></p>
+        <a class="button" href={`/stays/${p.slug}#book`} data-back>Choose other dates</a>
+      </div>
+
+      <div data-flow hidden>
+        <section class="step" aria-labelledby="s1">
+          <h2 id="s1"><span class="step__n">1</span> Your stay</h2>
+          <dl class="rows">
+            <div><dt>Dates</dt><dd data-dates></dd></div>
+            <div><dt>Guests</dt><dd data-guests></dd></div>
+          </dl>
+          <a class="small text-link" href={`/stays/${p.slug}#book`} data-back>Change dates or guests</a>
+        </section>
+
+        <section class="step" aria-labelledby="s2">
+          <h2 id="s2"><span class="step__n">2</span> Extras</h2>
+          <fieldset class="extras">
+            <legend class="visually-hidden">Add extras</legend>
+            {
+              offered.map((e) => (
+                <label class="extra" data-extra={e.id} hidden>
+                  <input type="checkbox" name="extras" value={e.id} />
+                  <span>
+                    <strong>{e.label}</strong>
+                    <span class="small muted">{e.description}</span>
+                  </span>
+                  <span class="extra__price">£{e.price / 100}{e.per === 'night' ? ' a night' : ''}</span>
+                </label>
+              ))
+            }
+          </fieldset>
+          <p class="small muted" data-no-extras hidden>
+            Early check-in and late checkout aren't available for these dates because other guests are leaving or arriving that day.
+          </p>
+        </section>
+
+        <form class="step" aria-labelledby="s3" data-form novalidate>
+          <h2 id="s3"><span class="step__n">3</span> Your details</h2>
+          <div class="row">
+            <div class="field">
+              <label for="firstName">First name</label>
+              <input id="firstName" name="firstName" autocomplete="given-name" required maxlength="80" />
+            </div>
+            <div class="field">
+              <label for="lastName">Last name</label>
+              <input id="lastName" name="lastName" autocomplete="family-name" required maxlength="80" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" required />
+            </div>
+            <div class="field">
+              <label for="phone">Mobile</label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" required />
+            </div>
+          </div>
+          <div class="field">
+            <label for="arrivalTime">Roughly when will you arrive?</label>
+            <select id="arrivalTime" name="arrivalTime">
+              {arrivalTimes.map((t) => <option selected={t === 'Not sure yet'}>{t}</option>)}
+            </select>
+          </div>
+          <fieldset class="field">
+            <legend>Is this a work trip?</legend>
+            <div class="radios">
+              <label class="check"><input type="radio" name="workTrip" value="no" checked /> No</label>
+              <label class="check"><input type="radio" name="workTrip" value="yes" /> Yes</label>
+            </div>
+          </fieldset>
+          <div class="field" data-company hidden>
+            <label for="company">Company name (for the receipt)</label>
+            <input id="company" name="company" autocomplete="organization" maxlength="120" />
+          </div>
+          <div class="field">
+            <label for="notes">Anything we should know? (optional)</label>
+            <textarea id="notes" name="notes" maxlength="1000" rows="3"></textarea>
+          </div>
+          <label class="check terms">
+            <input type="checkbox" name="terms" required />
+            <span>I agree to the <a href="/terms" target="_blank">booking terms</a> and <a href="/house-rules" target="_blank">house rules</a>.</span>
+          </label>
+          <div data-turnstile></div>
+          <p class="error" data-error role="alert" hidden></p>
+          <button type="submit" class="button" data-submit>Continue to payment</button>
+          <p class="small muted" data-submit-note></p>
+        </form>
+
+        <section class="step" aria-labelledby="s4" data-payment hidden>
+          <h2 id="s4"><span class="step__n">4</span> Payment</h2>
+          <p class="small muted">Pay securely with Stripe. Your card details go straight to them and never reach us.</p>
+          <div data-checkout></div>
+        </section>
+      </div>
+    </div>
+
+    <aside class="summary" aria-label="Booking summary">
+      <details data-summary>
+        <summary>
+          <span>Show summary</span>
+          <strong data-sum-total></strong>
+        </summary>
+        <div class="summary__body">
+          <Photo slug={p.slug} file={card?.file} alt={card?.alt ?? p.name} label={p.name} sizes="360px" />
+          <p class="kicker summary__kicker">{p.area}</p>
+          <p class="summary__name">{p.name}</p>
+          <p class="small muted" data-sum-dates></p>
+          <dl class="lines" data-sum-lines></dl>
+          <p class="small" data-sum-cancel></p>
+        </div>
+      </details>
+    </aside>
+  </div>
+</Base>
+
+<script>
+  import { fmtDate, gbp, fmtDeadline, getConfig, mountTurnstile, plural, postJson, type PublicBooking } from '../../scripts/booking';
+
+  interface Quote {
+    ok: boolean;
+    mode: 'instant' | 'enquire' | null;
+    errors: string[];
+    checkIn: string;
+    checkOut: string;
+    guests: number;
+    nightCount: number;
+    subtotal: number;
+    discount: number;
+    discountRate: number;
+    extras: { id: string; label: string; pence: number }[];
+    total: number;
+    eligibleExtras: string[];
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-book]')!;
+  const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+  const slug = root.dataset.slug!;
+  const qs = new URLSearchParams(location.search);
+  const checkIn = qs.get('checkIn') ?? '';
+  const checkOut = qs.get('checkOut') ?? '';
+  const guests = Number(qs.get('guests') ?? 0);
+  const backParams = new URLSearchParams({ checkIn, checkOut, guests: String(guests) });
+  root.querySelectorAll<HTMLAnchorElement>('[data-back]').forEach((a) => (a.href = `/stays/${slug}?${backParams}#book`));
+
+  const form = $<HTMLFormElement>('[data-form]');
+  const errorEl = $('[data-error]');
+  const submit = $<HTMLButtonElement>('[data-submit]');
+  const extraBoxes = [...root.querySelectorAll<HTMLInputElement>('input[name="extras"]')];
+  let quote: Quote | null = null;
+  let locked = false;
+
+  // Summary is open beside the form on desktop, collapsed into a bar on mobile.
+  const summary = document.querySelector<HTMLDetailsElement>('[data-summary]')!;
+  const wide = matchMedia('(min-width: 960px)');
+  const syncSummary = () => (summary.open = wide.matches);
+  syncSummary();
+  wide.addEventListener('change', syncSummary);
+
+  function problem(text: string) {
+    $('[data-flow]').hidden = true;
+    $('[data-problem-text]').textContent = text;
+    $('[data-problem]').hidden = false;
+  }
+
+  const chosenExtras = () => extraBoxes.filter((b) => b.checked).map((b) => b.value);
+
+  async function requote() {
+    const q = await postJson<Quote>('/api/quote', { slug, checkIn, checkOut, guests, extras: chosenExtras() });
+    if (!q.ok) return problem(q.errors?.[0] ?? q.error ?? 'Those dates are no longer available.');
+    if (q.mode === 'enquire') {
+      location.href = `/work-stays?${backParams}#quote`;
+      return;
+    }
+    quote = q;
+    renderSummary(q);
+  }
+
+  function renderSummary(q: Quote) {
+    $('[data-dates]').textContent = `${fmtDate(q.checkIn)} to ${fmtDate(q.checkOut)} (${plural(q.nightCount, 'night')})`;
+    $('[data-guests]').textContent = plural(q.guests, 'guest');
+    document.querySelector('[data-sum-dates]')!.textContent = `${fmtDate(q.checkIn)} to ${fmtDate(q.checkOut)} · ${plural(q.guests, 'guest')}`;
+    const lines: [string, string, string?][] = [
+      [plural(q.nightCount, 'night'), gbp(q.subtotal)],
+      ...(q.discount ? [[`Direct booking discount (${Math.round(q.discountRate * 100)}%)`, `−${gbp(q.discount)}`] as [string, string]] : []),
+      ...q.extras.map((e) => [e.label, gbp(e.pence)] as [string, string]),
+      ['Total', gbp(q.total), 'lines__total'],
+    ];
+    document.querySelector('[data-sum-lines]')!.innerHTML = lines.map(([k, v, c]) => `<div class="${c ?? ''}"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+    document.querySelector('[data-sum-total]')!.textContent = gbp(q.total);
+
+    for (const label of root.querySelectorAll<HTMLElement>('[data-extra]')) label.hidden = !q.eligibleExtras.includes(label.dataset.extra!);
+    $('[data-no-extras]').hidden = q.eligibleExtras.some((id) => id === 'early_checkin' || id === 'late_checkout');
+
+    // Free cancellation closes at check-in time, N days before arrival (London time).
+    const d = new Date(`${q.checkIn}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - Number(root.dataset.cancelDays));
+    const deadlineDay = d.toISOString().slice(0, 10);
+    const deadline = londonTime(deadlineDay, root.dataset.checkinTime!);
+    document.querySelector('[data-sum-cancel]')!.textContent =
+      deadline > new Date()
+        ? `Free cancellation until ${fmtDeadline(deadline.toISOString())}.`
+        : `Your stay starts within ${root.dataset.cancelDays} days, so this booking can't be refunded if you cancel.`;
+  }
+
+  /** A London wall-clock time as a Date (London is UTC or UTC+1). */
+  function londonTime(iso: string, hhmm: string) {
+    const guess = new Date(`${iso}T${hhmm}:00Z`);
+    const h = Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone: 'Europe/London' }).format(guess));
+    return new Date(guess.getTime() - ((h - guess.getUTCHours() + 24) % 24) * 3_600_000);
+  }
+
+  extraBoxes.forEach((b) => b.addEventListener('change', () => !locked && requote()));
+  form.querySelectorAll<HTMLInputElement>('input[name="workTrip"]').forEach((r) =>
+    r.addEventListener('change', () => ($('[data-company]').hidden = form.workTrip.value !== 'yes')),
+  );
+
+  let turnstileToken: () => string | undefined = () => undefined;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!quote || locked) return;
+    errorEl.hidden = true;
+    const data = new FormData(form);
+    const missing = [...form.querySelectorAll<HTMLInputElement>('[required]')].find((el) => (el.type === 'checkbox' ? !el.checked : !el.value.trim()));
+    if (missing) {
+      errorEl.textContent = missing.type === 'checkbox' ? 'Tick the box to agree to the booking terms and house rules.' : `Fill in ${form.querySelector(`label[for="${missing.id}"]`)?.textContent?.toLowerCase() ?? 'every field'}.`;
+      errorEl.hidden = false;
+      missing.focus();
+      return;
+    }
+    submit.disabled = true;
+    const res = await postJson<{ mode: 'instant' | 'request'; ref: string; clientSecret?: string; booking?: PublicBooking }>('/api/checkout', {
+      slug,
+      checkIn,
+      checkOut,
+      guests,
+      extras: chosenExtras(),
+      firstName: data.get('firstName'),
+      lastName: data.get('lastName'),
+      email: data.get('email'),
+      phone: data.get('phone'),
+      arrivalTime: data.get('arrivalTime'),
+      workTrip: data.get('workTrip'),
+      company: data.get('workTrip') === 'yes' ? data.get('company') : '',
+      notes: data.get('notes'),
+      terms: data.get('terms') === 'on',
+      turnstileToken: turnstileToken(),
+    });
+    if (!res.ok) {
+      errorEl.textContent = res.error ?? 'Something went wrong. Try again.';
+      errorEl.hidden = false;
+      submit.disabled = false;
+      return;
+    }
+    if (res.mode === 'request' && res.booking) {
+      try {
+        sessionStorage.setItem(`booking:${res.booking.ref}`, JSON.stringify(res.booking));
+      } catch {
+        /* the confirmation page falls back to a shorter message */
+      }
+      location.href = `/book/confirmed?ref=${encodeURIComponent(res.booking.ref)}`;
+      return;
+    }
+    // Instant: freeze the form and show Stripe's payment form underneath.
+    locked = true;
+    form.querySelectorAll<HTMLInputElement>('input, select, textarea').forEach((el) => (el.disabled = true));
+    extraBoxes.forEach((b) => (b.disabled = true));
+    submit.hidden = true;
+    $('[data-submit-note]').textContent = 'To change your details, reload the page.';
+    $('[data-payment]').hidden = false;
+    const { stripePublishableKey } = await getConfig();
+    const { loadStripe } = await import('@stripe/stripe-js');
+    const stripe = await loadStripe(stripePublishableKey!);
+    const checkout = await stripe!.initEmbeddedCheckout({ fetchClientSecret: async () => res.clientSecret! });
+    checkout.mount($('[data-checkout]'));
+    $('[data-payment]').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  (async () => {
+    if (!checkIn || !checkOut || !guests) return problem('Choose your dates and number of guests first.');
+    const [config] = await Promise.all([getConfig(), requote()]);
+    if (!quote) return;
+    if (config.mode === 'request') {
+      $('[data-title]').textContent = 'Request to book';
+      submit.textContent = 'Send booking request';
+      $('[data-submit-note]').textContent = "Nothing is charged now. We'll check the dates and reply within a few hours with a secure link to pay.";
+    } else {
+      $('[data-submit-note]').textContent = "You'll pay on the next step, securely through Stripe.";
+    }
+    $('[data-flow]').hidden = false;
+    turnstileToken = await mountTurnstile($('[data-turnstile]'));
+  })();
+</script>
+
+<style>
+  .book {
+    display: grid;
+    gap: var(--s4);
+    padding-top: calc(var(--header-h) + var(--s4));
+    padding-bottom: var(--section);
+  }
+  @media (min-width: 960px) {
+    .book {
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: var(--s8);
+    }
+  }
+  .back {
+    display: inline-block;
+    margin-bottom: var(--s2);
+  }
+  h1 {
+    font-size: var(--text-2xl);
+  }
+
+  .step {
+    display: grid;
+    gap: var(--s2);
+    padding-block: var(--s4);
+    border-top: 1px solid var(--line);
+  }
+  .step h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--s1);
+    margin: 0;
+    font-size: var(--text-lg);
+  }
+  .step__n {
+    display: inline-grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid var(--brass);
+    border-radius: 50%;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+  .row {
+    display: grid;
+    gap: var(--s2);
+  }
+  @media (min-width: 640px) {
+    .row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .extras {
+    display: grid;
+    gap: var(--s1);
+  }
+  .extra {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--s2);
+    align-items: start;
+    padding: var(--s2);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .extra[hidden] {
+    display: none;
+  }
+  .extra input {
+    margin-top: 0.2rem;
+  }
+  .extra > span {
+    display: grid;
+    gap: 0.125rem;
+  }
+  .extra__price {
+    font-weight: 600;
+  }
+  .radios {
+    display: flex;
+    gap: var(--s3);
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: var(--s1);
+    font-weight: 600;
+  }
+  .check input[type='radio'] {
+    width: 1.125rem;
+    min-height: 1.125rem;
+    height: 1.125rem;
+    accent-color: var(--forest);
+  }
+  .terms {
+    align-items: flex-start;
+    font-weight: 400;
+  }
+  .terms input {
+    margin-top: 0.2rem;
+    flex: none;
+  }
+  .error {
+    margin: 0;
+    color: var(--error);
+    font-weight: 600;
+  }
+  .button {
+    justify-self: start;
+  }
+  .button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .notice {
+    padding: var(--s3);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .summary {
+    align-self: start;
+    order: -1;
+  }
+  @media (min-width: 960px) {
+    .summary {
+      order: 0;
+      position: sticky;
+      top: calc(var(--header-h) + var(--s4));
+    }
+  }
+  .summary details {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .summary summary {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--s2);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+  .summary summary::-webkit-details-marker {
+    display: none;
+  }
+  @media (min-width: 960px) {
+    .summary summary {
+      display: none;
+    }
+  }
+  .summary__body {
+    padding: 0 var(--s2) var(--s2);
+  }
+  @media (min-width: 960px) {
+    .summary__body {
+      padding: var(--s2);
+    }
+  }
+  .summary__kicker {
+    margin-top: var(--s2);
+  }
+  .summary__name {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+  }
+  .lines {
+    margin: var(--s2) 0;
+  }
+  .lines :global(div) {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s2);
+    padding: 0.375rem 0;
+  }
+  .lines :global(dd) {
+    margin: 0;
+  }
+  .lines :global(.lines__total) {
+    margin-top: 0.25rem;
+    padding-top: var(--s1);
+    border-top: 1px solid var(--line);
+    font-weight: 700;
+  }
+</style>

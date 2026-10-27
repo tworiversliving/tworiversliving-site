@@ -17,7 +17,7 @@ export const booking = {
   checkOutTime: '11:00',
   currency: 'GBP',
   /** Bump this whenever the booking terms change, so each booking records which version was agreed. */
-  termsVersion: '2026-10-25',
+  termsVersion: '2026-10-27',
 };
 
 export type ExtraId = 'parking' | 'early_checkin' | 'late_checkout';

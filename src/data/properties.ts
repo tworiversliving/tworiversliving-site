@@ -39,6 +39,8 @@ export interface Property {
   photos: Photo[];
   heroPhoto: string;
   cardPhoto: string;
+  /** Social share image, cropped to 1.91:1 from the centre. Pick a photo that still reads when cropped. */
+  ogPhoto: string;
   reviews: Review[];
   /** Shown on cards until the live price loads. In pounds, after the direct discount. */
   fromPriceFallback: number;
@@ -76,7 +78,7 @@ export const properties: Property[] = [
         'Washing machine',
         'Full kitchen',
         'Dining table for everyone',
-        'Bath and shower',
+        'Walk-in shower',
         'Towels and bed linen',
         'TV',
         'Self check-in',
@@ -85,7 +87,7 @@ export const properties: Property[] = [
       all: {
         Kitchen: ['Oven and hob', 'Fridge-freezer', 'Microwave', 'Kettle and toaster', 'Pots, pans, crockery and cutlery for everyone', 'Dining table'],
         Bedrooms: ['Three double beds', 'Sofa bed in bedroom 1', 'Bed linen provided'],
-        Bathroom: ['Bath with shower', 'Towels provided'],
+        Bathroom: ['Walk-in shower', 'Towels provided'],
         'Living and working': ['Wifi throughout', 'Desk and chair', 'TV', 'Sofas'],
         Laundry: ['Washing machine'],
         Arrival: ['Self check-in with a key lockbox', 'Check-in from 15:00, checkout by 11:00'],
@@ -120,20 +122,32 @@ export const properties: Property[] = [
     ],
     extras: ['parking', 'early_checkin', 'late_checkout'],
     photos: [
-      { file: 'living-room.jpg', room: 'Living room', alt: 'Living room with sofas and daylight from the front windows' },
-      { file: 'dining.jpg', room: 'Kitchen and dining', alt: 'Dining table set for the whole group' },
-      { file: 'kitchen.jpg', room: 'Kitchen and dining', alt: 'Kitchen with oven, hob and worktop space' },
-      { file: 'bedroom-1.jpg', room: 'Bedroom 1', alt: 'Bedroom 1 with a double bed' },
-      { file: 'bedroom-2.jpg', room: 'Bedroom 2', alt: 'Bedroom 2 with a double bed' },
-      { file: 'bedroom-3.jpg', room: 'Bedroom 3', alt: 'Bedroom 3 with a double bed' },
-      { file: 'bathroom.jpg', room: 'Bathroom', alt: 'Bathroom with bath and shower' },
-      { file: 'workspace.jpg', room: 'Workspace', alt: 'Desk and chair by the window' },
+      { file: 'living-room.jpg', room: 'Living room', alt: 'Living room with two sofas, a chandelier and daylight from the sash window' },
+      { file: 'living-room-tv.jpg', room: 'Living room', alt: 'Living room seating facing the wall-mounted TV' },
+      { file: 'living-room-detail.jpg', room: 'Living room', alt: 'Round wooden coffee table in front of the sofa by the window' },
+      { file: 'dining.jpg', room: 'Kitchen and dining', alt: 'Dining table laid for six beside the living room window' },
+      { file: 'kitchen.jpg', room: 'Kitchen and dining', alt: 'Kitchen with a gas cooker, fridge-freezer and worktop space' },
+      { file: 'kitchen-detail.jpg', room: 'Kitchen and dining', alt: 'Kitchen worktop with kettle, toaster and gas hob' },
+      { file: 'bedroom-1.jpg', room: 'Bedroom 1', alt: 'Bedroom 1 with a double bed, desk chair and two large windows' },
+      { file: 'bedroom-1-alt.jpg', room: 'Bedroom 1', alt: 'Bedroom 1 from the window side, with the double bed and storage bench' },
+      { file: 'bedroom-2.jpg', room: 'Bedroom 2', alt: 'Bedroom 2 with a double bed under the window' },
+      { file: 'bedroom-2-alt.jpg', room: 'Bedroom 2', alt: 'Bedroom 2 looking from the bed towards the door and wardrobe' },
+      { file: 'bedroom-2-wide.jpg', room: 'Bedroom 2', alt: 'Wide view of bedroom 2 with the double bed and ceiling fan' },
+      { file: 'bedroom-2-wide-2.jpg', room: 'Bedroom 2', alt: 'Bedroom 2 from the corner, showing the bed and the door' },
+      { file: 'bedroom-2-detail.jpg', room: 'Bedroom 2', alt: 'Fresh towels on the bed in bedroom 2, beside the sliding wardrobe' },
+      { file: 'bedroom-3.jpg', room: 'Bedroom 3', alt: 'Bedroom 3 with a double bed and a window over the street' },
+      { file: 'bedroom-3-detail.jpg', room: 'Bedroom 3', alt: 'Bedroom 3 headboard with cushions and rolled towels' },
+      { file: 'bathroom.jpg', room: 'Bathroom', alt: 'Bathroom with a walk-in shower, basin and toilet' },
+      { file: 'bathroom-2.jpg', room: 'Bathroom', alt: 'Walk-in shower with a glass screen next to the basin' },
+      { file: 'bathroom-detail.jpg', room: 'Bathroom', alt: 'Framed street map on the tiled bathroom wall' },
+      { file: 'workspace.jpg', room: 'Workspace', alt: 'Desk chair in bedroom 1, beside the double bed' },
       { file: 'bedroom-doors.jpg', room: 'Workspace', alt: 'The three bedroom doors off the hallway' },
       { file: 'church-street.jpg', room: 'Neighbourhood', alt: 'Shops and cafés on Stoke Newington Church Street' },
       { file: 'clissold-park.jpg', room: 'Neighbourhood', alt: 'Clissold Park on a clear day' },
     ],
     heroPhoto: 'living-room.jpg',
     cardPhoto: 'living-room.jpg',
+    ogPhoto: 'dining.jpg',
     // Add the four real reviews here (3 Airbnb, 1 Booking.com). The section stays hidden while this is empty.
     reviews: [],
     fromPriceFallback: 216,

@@ -1,0 +1,209 @@
+---
+import Base from '../layouts/Base.astro';
+import Photo from '../components/Photo.astro';
+import Faq from '../components/Faq.astro';
+import EnquiryForm from '../components/EnquiryForm.astro';
+import Text from '../components/Text.astro';
+import { booking } from '../config/booking';
+import { properties } from '../data/properties';
+import { faqGroups } from '../data/faq';
+
+const p = properties[0];
+const doors = p.photos.find((ph) => ph.file === 'bedroom-doors.jpg') ?? p.photos.find((ph) => ph.room === 'Workspace');
+const minNights = booking.maxInstantNights + 1;
+
+const audiences = [
+  { who: 'Contractors and site teams', line: 'Three private rooms under one roof, with a kitchen to cook in after a long day.' },
+  { who: 'Relocation and insurance placements', line: 'A whole home with a washing machine and space to settle while you sort the next step.' },
+  { who: 'NHS and healthcare staff', line: 'A quiet base for placements and rotations, with self check-in at any hour.' },
+  { who: 'Film and TV crews', line: 'Room for a small crew, a short train ride from central London.' },
+];
+
+const included = [
+  'The whole flat, with one booker and one agreement',
+  'Three private double bedrooms',
+  'A desk and chair, with wifi throughout [add measured speed]',
+  'Full kitchen and a washing machine',
+  'Bills included',
+  'Mid-stay clean and linen change [confirm frequency]',
+  'Parking permit available',
+];
+
+const steps = [
+  'Send your dates and headcount.',
+  'Get a quote within [X] hours.',
+  'Pay by card or invoice.',
+  'Check yourself in with the lockbox.',
+];
+
+const terms = [
+  'Invoices and receipts in your company name',
+  'Weekly or monthly rates',
+  'Card or bank transfer',
+  'A booking agreement for every long stay',
+];
+
+const bookerFaq = [
+  { q: 'Are there stairs?', a: 'Yes. The front door is up a flight of stairs and there is no lift.' },
+  { q: 'Is there parking?', a: 'We can arrange a visitor permit for the resident bays nearby. It is a permit, not a private space.' },
+  ...(faqGroups.find((g) => g.title === 'Work stays')?.items ?? []),
+];
+---
+
+<Base
+  title="Work and long stays"
+  description={`A whole three-bedroom flat in Stoke Newington for contractors, placements and crews. ${minNights} nights to three months, invoiced to your company.`}
+  ogPhoto={{ slug: properties[0].slug, file: 'bedroom-1.jpg' }}
+>
+  <section class="hero container">
+    <div class="hero__text">
+      <span class="kicker">Work and long stays</span>
+      <h1>A base for work in North London.</h1>
+      <p class="lead">The whole flat, three private bedrooms, for {minNights} nights to three months.</p>
+      <a href="#quote" class="button">Request a quote</a>
+    </div>
+    <Photo slug={p.slug} file={doors?.file} alt={doors?.alt ?? ''} label={doors?.room} eager sizes="(min-width: 960px) 600px, 100vw" />
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2>Who it's for</h2>
+      <ul class="who">
+        {
+          audiences.map((a) => (
+            <li>
+              <h3>{a.who}</h3>
+              <p class="muted">{a.line}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container grid-2">
+      <div>
+        <h2>What's included</h2>
+        <ul class="ticks">
+          {included.map((i) => <li><Text text={i} /></li>)}
+        </ul>
+      </div>
+      <div>
+        <h2>How it works</h2>
+        <ol class="steps">
+          {steps.map((s) => <li><Text text={s} /></li>)}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="terms">
+        <h2>Terms in plain view</h2>
+        <ul class="terms__list">
+          {terms.map((t) => <li>{t}</li>)}
+        </ul>
+        <p class="small muted">We take stays of up to {booking.maxNights} nights. For three months or more, get in touch before you book.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--paper" id="quote">
+    <div class="container narrow">
+      <span class="kicker">Request a quote</span>
+      <h2>Tell us what you need</h2>
+      <p class="muted">We'll come back with a price for the whole stay. <Text text="Quotes within [X] hours." /></p>
+      <EnquiryForm type="work" />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container narrow">
+      <h2>Questions from bookers</h2>
+      <Faq items={bookerFaq} />
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    display: grid;
+    gap: var(--s5);
+    align-items: center;
+    padding-top: calc(var(--header-h) + var(--s6));
+  }
+  @media (min-width: 960px) {
+    .hero {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--s8);
+    }
+  }
+  .hero h1 {
+    font-size: var(--text-3xl);
+  }
+
+  .who {
+    display: grid;
+    gap: var(--s4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 768px) {
+    .who {
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--s4) var(--s6);
+    }
+  }
+  @media (min-width: 1100px) {
+    .who {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  .who li {
+    padding-top: var(--s3);
+    border-top: 1px solid var(--brass);
+  }
+
+  .steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+  }
+  .steps li {
+    counter-increment: step;
+    display: flex;
+    gap: var(--s2);
+    padding-block: var(--s2);
+    border-bottom: 1px solid var(--line);
+  }
+  .steps li::before {
+    content: counter(step);
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+    color: var(--brass-deep);
+    min-width: 1.5em;
+  }
+
+  .terms {
+    padding: var(--s5) var(--s4);
+    border: 1px solid var(--forest);
+    border-radius: var(--radius);
+  }
+  .terms__list {
+    display: grid;
+    gap: var(--s2);
+    margin: 0 0 var(--s3);
+    padding: 0;
+    list-style: none;
+    font-weight: 600;
+  }
+  @media (min-width: 768px) {
+    .terms__list {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+</style>

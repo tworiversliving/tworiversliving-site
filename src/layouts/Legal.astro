@@ -1,0 +1,76 @@
+---
+// Shared shell for /terms, /privacy, /cookies and /house-rules.
+// Drafted in plain English from PLAN.md's legal checklist. Not legal advice: have a solicitor read them once before launch.
+import Base from './Base.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  kicker?: string;
+  /** ISO date the page last changed in substance. */
+  updated: string;
+  intro?: string;
+}
+
+const { title, description, kicker = 'Legal', updated, intro } = Astro.props;
+const updatedText = new Date(`${updated}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/London' });
+---
+
+<Base title={title} description={description}>
+  <div class="container narrow page-head">
+    <span class="kicker">{kicker}</span>
+    <h1>{title}</h1>
+    {intro && <p>{intro}</p>}
+    <p class="small muted">Last updated {updatedText}</p>
+  </div>
+
+  <article class="container narrow legal">
+    <slot />
+  </article>
+</Base>
+
+<style>
+  .page-head .small {
+    font-size: var(--text-sm);
+  }
+  .legal {
+    padding-bottom: var(--section);
+  }
+  .legal :global(h2) {
+    margin-top: var(--s6);
+    font-size: var(--text-xl);
+  }
+  .legal :global(h2:first-child) {
+    margin-top: 0;
+  }
+  .legal :global(h3) {
+    margin-top: var(--s4);
+    font-size: 1.0625rem;
+  }
+  .legal :global(ul) {
+    padding-left: 1.25em;
+  }
+  .legal :global(li) {
+    margin-bottom: var(--s1);
+  }
+  .legal :global(table) {
+    width: 100%;
+    margin-bottom: var(--s3);
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+  .legal :global(th),
+  .legal :global(td) {
+    padding: var(--s1) var(--s2) var(--s1) 0;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  .legal :global(th) {
+    font-weight: 600;
+  }
+  /* Tables scroll sideways on small screens rather than squashing */
+  .legal :global(.table) {
+    overflow-x: auto;
+  }
+</style>

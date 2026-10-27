@@ -1,0 +1,41 @@
+---
+import Base from '../layouts/Base.astro';
+import Faq from '../components/Faq.astro';
+import { site } from '../config/site';
+import { faqGroups } from '../data/faq';
+import { faqPage } from '../lib/schema';
+---
+
+<Base
+  title="FAQ"
+  description="Answers on booking, payment, cancellation, check-in and work stays at Two Rivers Living."
+  schema={[faqPage(faqGroups.flatMap((g) => g.items))]}
+>
+  <div class="container narrow page-head">
+    <span class="kicker">FAQ</span>
+    <h1>Questions and answers</h1>
+    <p>Can't find what you need? Email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+  </div>
+
+  <div class="container narrow groups">
+    {
+      faqGroups.map((g) => (
+        <section>
+          <h2>{g.title}</h2>
+          <Faq items={g.items} />
+        </section>
+      ))
+    }
+  </div>
+</Base>
+
+<style>
+  .groups {
+    display: grid;
+    gap: var(--s8);
+    padding-bottom: var(--section);
+  }
+  h2 {
+    font-size: var(--text-xl);
+  }
+</style>

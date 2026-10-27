@@ -1,0 +1,200 @@
+---
+// Enquiry form for work stays, long stays and general contact. Posts to /api/enquiry.
+// Dates sent from the booking panel (15+ nights) arrive in the query string and are filled in.
+import { booking } from '../config/booking';
+import { properties } from '../data/properties';
+
+interface Props {
+  type: 'work' | 'contact';
+}
+
+const { type } = Astro.props;
+const isWork = type === 'work';
+const maxGuests = Math.max(...properties.map((p) => p.guests));
+---
+
+<form class="form" method="post" action="/api/enquiry" data-enquiry>
+  <input type="hidden" name="type" value={type} data-type />
+  {properties.length === 1 && <input type="hidden" name="property" value={properties[0].slug} />}
+
+  {
+    isWork && (
+      <div class="field">
+        <label for="company">Company (optional)</label>
+        <input id="company" name="company" autocomplete="organization" />
+      </div>
+    )
+  }
+
+  <div class="row">
+    <div class="field">
+      <label for="name">Your name</label>
+      <input id="name" name="name" autocomplete="name" required />
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required />
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="phone">Phone{isWork ? '' : ' (optional)'}</label>
+    <input id="phone" name="phone" type="tel" autocomplete="tel" required={isWork} />
+  </div>
+
+  {
+    isWork && (
+      <>
+        <div class="row">
+          <div class="field">
+            <label for="checkIn">Arriving</label>
+            <input id="checkIn" name="checkIn" type="date" required />
+          </div>
+          <div class="field">
+            <label for="checkOut">Leaving</label>
+            <input id="checkOut" name="checkOut" type="date" required />
+          </div>
+        </div>
+        <p class="small muted hint">
+          Stays from {booking.maxInstantNights + 1} to {booking.maxNights} nights. For three months or more, get in touch first.
+        </p>
+
+        <div class="row">
+          <div class="field">
+            <label for="guests">Guests</label>
+            <select id="guests" name="guests">
+              {Array.from({ length: maxGuests }, (_, i) => (
+                <option value={i + 1}>{i + 1}</option>
+              ))}
+            </select>
+          </div>
+          <div class="field">
+            <label for="purpose">Purpose of stay</label>
+            <select id="purpose" name="purpose">
+              <option>Contract or site work</option>
+              <option>Relocation</option>
+              <option>Insurance placement</option>
+              <option>Healthcare placement</option>
+              <option>Film or TV production</option>
+              <option>Something else</option>
+            </select>
+          </div>
+        </div>
+
+        <label class="check">
+          <input type="checkbox" name="needsInvoice" value="1" />
+          <span>We need an invoice</span>
+        </label>
+      </>
+    )
+  }
+
+  <div class="field">
+    <label for="message">{isWork ? 'Anything else we should know (optional)' : 'Message'}</label>
+    <textarea id="message" name="message" required={!isWork}></textarea>
+  </div>
+
+  <div data-turnstile></div>
+  <p class="error" data-error role="alert" hidden></p>
+  <button type="submit" class="button">{isWork ? 'Request a quote' : 'Send message'}</button>
+</form>
+
+<div class="sent" data-sent tabindex="-1" hidden>
+  <h3>Thanks, we have your {isWork ? 'enquiry' : 'message'}</h3>
+  <p>We've emailed you a copy. We reply within a few hours, 8am to 10pm.</p>
+</div>
+
+<script>
+  import { mountTurnstile, postJson } from '../scripts/booking';
+
+  const form = document.querySelector<HTMLFormElement>('[data-enquiry]');
+  const sent = document.querySelector<HTMLElement>('[data-sent]');
+  if (form && sent) {
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('sent') === '1') {
+      form.hidden = true;
+      sent.hidden = false;
+    }
+    // Arriving from the booking panel with a long stay: fill in what the guest already chose.
+    const fill = (name: string, value: string | null) => {
+      const el = form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null;
+      if (el && value) el.value = value;
+    };
+    if (qs.get('checkIn')) {
+      fill('checkIn', qs.get('checkIn'));
+      fill('checkOut', qs.get('checkOut'));
+      fill('guests', qs.get('guests'));
+      const type = form.querySelector<HTMLInputElement>('[data-type]');
+      if (type?.value === 'work') type.value = 'long_stay';
+    }
+
+    let token: () => string | undefined = () => undefined;
+    mountTurnstile(form.querySelector('[data-turnstile]')).then((t) => (token = t));
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = form.querySelector<HTMLElement>('[data-error]')!;
+      const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      err.hidden = true;
+      if (!form.reportValidity()) return;
+      button.disabled = true;
+      const data = Object.fromEntries(new FormData(form).entries());
+      const res = await postJson('/api/enquiry', { ...data, turnstileToken: token() });
+      button.disabled = false;
+      if (!res.ok) {
+        err.textContent = res.error ?? 'Something went wrong. Try again.';
+        err.hidden = false;
+        return;
+      }
+      form.hidden = true;
+      sent.hidden = false;
+      sent.focus();
+    });
+  }
+</script>
+
+<style>
+  .form {
+    display: grid;
+    gap: var(--s3);
+  }
+  .row {
+    display: grid;
+    gap: var(--s3);
+  }
+  @media (min-width: 640px) {
+    .row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .hint {
+    margin: calc(var(--s2) * -1) 0 0;
+  }
+  .check {
+    display: flex;
+    align-items: center;
+    gap: var(--s1);
+    font-weight: 600;
+    font-size: var(--text-sm);
+  }
+  .button {
+    justify-self: start;
+  }
+  .button:disabled {
+    opacity: 0.5;
+  }
+  .error {
+    margin: 0;
+    color: var(--error);
+    font-weight: 600;
+  }
+  .sent {
+    padding: var(--s3);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .sent:focus {
+    outline: none;
+  }
+</style>

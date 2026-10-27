@@ -135,16 +135,44 @@ export const emails = {
     ]);
     return { to: b.email, subject: `We couldn't confirm booking ${b.ref}`, html, text };
   },
+  hostConflict(env: Env, b: BookingRow, refunded: boolean) {
+    const { html, text } = layout(
+      env,
+      [
+        'DOUBLE BOOKING CAUGHT: a direct guest paid for nights that were taken by the time payment landed.',
+        refunded
+          ? `The full ${gbp(b.total_pence)} was refunded automatically and the guest has had an apology email.`
+          : `The automatic refund FAILED. Refund ${gbp(b.total_pence)} by hand in Stripe now. The guest has had an apology email saying they've been refunded.`,
+        `${b.first_name} ${b.last_name} · ${b.email} · ${b.phone}`,
+      ],
+      stayRows(b),
+    );
+    return { to: env.HOST_EMAIL, subject: `${refunded ? 'Conflict, refunded' : 'Conflict, REFUND BY HAND'}: ${b.ref}`, html, text, replyTo: b.email };
+  },
   cancelled(env: Env, b: BookingRow, refundPence: number) {
     const { html, text } = layout(env, [
       `Hi ${b.first_name},`,
       `Your booking ${b.ref} is cancelled.`,
       refundPence > 0
         ? `We've refunded ${gbp(refundPence)} to your card. It usually shows within 5 to 10 working days.`
-        : 'This cancellation was inside the 5-day window, so no refund is due under the booking terms.',
+        : b.mode === 'request'
+          ? 'Nothing was charged, so there is nothing to refund.'
+          : 'This cancellation was inside the 5-day window, so no refund is due under the booking terms.',
       `We hope to host you another time.\n${site.hosts}`,
     ]);
     return { to: b.email, subject: `Booking cancelled: ${b.ref}`, html, text };
+  },
+  hostCancelled(env: Env, b: BookingRow, refundPence: number, pmsCancelled: boolean) {
+    const { html, text } = layout(
+      env,
+      [
+        `${b.first_name} ${b.last_name} cancelled ${b.mode === 'request' ? 'their booking request' : 'their booking'} on the website.`,
+        refundPence > 0 ? `Refunded ${gbp(refundPence)} through Stripe.` : 'No refund was due.',
+        b.pms_ref ? (pmsCancelled ? `Cancelled in the PMS (${b.pms_ref}).` : `Cancel ${b.pms_ref} in the PMS by hand: the automatic cancel failed.`) : '',
+      ].filter(Boolean),
+      stayRows(b),
+    );
+    return { to: env.HOST_EMAIL, subject: `Cancelled: ${b.ref}, ${b.check_in} to ${b.check_out}`, html, text, replyTo: b.email };
   },
   preArrival(env: Env, b: BookingRow, info: ArrivalInfo | undefined) {
     const p = getProperty(b.property);

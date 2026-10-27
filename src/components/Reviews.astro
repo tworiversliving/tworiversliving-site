@@ -1,0 +1,55 @@
+---
+// Real reviews only, attributed to the platform. Renders nothing while the list is empty.
+import type { Review } from '../data/properties';
+
+interface Props {
+  reviews: Review[];
+}
+
+const { reviews } = Astro.props;
+---
+
+{
+  reviews.length > 0 && (
+    <ul class="reviews">
+      {reviews.map((r) => (
+        <li>
+          <blockquote>
+            <p>“{r.quote}”</p>
+          </blockquote>
+          <p class="small muted">
+            {r.name}, {r.month}, via {r.platform}
+          </p>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  .reviews {
+    display: grid;
+    gap: var(--s4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 768px) {
+    .reviews {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+  }
+  li {
+    padding-top: var(--s3);
+    border-top: 1px solid var(--brass);
+  }
+  blockquote {
+    margin: 0 0 var(--s2);
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+    line-height: 1.45;
+  }
+  blockquote p {
+    margin: 0;
+  }
+</style>

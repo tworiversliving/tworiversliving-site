@@ -1,0 +1,10 @@
+---
+// Renders copy and highlights any [square-bracket placeholder] so it can't slip through to launch.
+interface Props {
+  text: string;
+}
+
+const parts = Astro.props.text.split(/(\[[^\]]+\])/).filter(Boolean);
+---
+
+{parts.map((part) => (part.startsWith('[') ? <span class="todo">{part}</span> : part))}

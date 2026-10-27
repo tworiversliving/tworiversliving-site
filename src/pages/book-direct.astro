@@ -1,0 +1,72 @@
+---
+import Base from '../layouts/Base.astro';
+import { booking } from '../config/booking';
+import { site } from '../config/site';
+
+const points = [
+  {
+    title: 'Our lowest price',
+    body: 'The nightly rate here is always below what you would pay for the same dates on a booking platform.',
+  },
+  {
+    title: 'Pay once, with no fees',
+    body: 'No booking fee, no service fee and no cleaning fee. The first price you see includes everything you have to pay.',
+  },
+  {
+    title: 'Flexible cancellation',
+    body: `Cancel more than ${booking.freeCancellationDays} days before check-in for a full refund. You can do it yourself from your confirmation email.`,
+  },
+  {
+    title: 'A direct line to the hosts',
+    body: `You deal with ${site.hosts}, who look after the flat. ${site.responseTime}`,
+  },
+  {
+    title: 'Secure payment',
+    body: 'Payments are handled by Stripe. Your card details go straight to them and never reach us.',
+  },
+];
+---
+
+<Base title="Why book direct" description="Book our homes direct: our lowest price, no booking fees, flexible cancellation and a direct line to the hosts.">
+  <div class="container narrow page-head">
+    <span class="kicker">Book direct</span>
+    <h1>Why book with us direct</h1>
+    <p>Booking here means a better price for you and a direct relationship with the people who run the flat.</p>
+  </div>
+
+  <div class="container narrow">
+    <ol class="list">
+      {
+        points.map((pt) => (
+          <li>
+            <h2>{pt.title}</h2>
+            <p class="muted">{pt.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="end"><a class="button" href="/stays">Find dates</a></p>
+  </div>
+</Base>
+
+<style>
+  .list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .list li {
+    padding-block: var(--s4);
+    border-top: 1px solid var(--line);
+  }
+  .list h2 {
+    font-size: var(--text-xl);
+    margin-bottom: var(--s1);
+  }
+  .list p {
+    margin: 0;
+  }
+  .end {
+    padding-block: var(--s4) var(--section);
+  }
+</style>

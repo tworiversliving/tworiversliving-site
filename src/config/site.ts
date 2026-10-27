@@ -12,11 +12,15 @@ export const site = {
   whatsappHref: '',
   companyNumber: '[company number]',
   registeredOffice: '[registered office address]',
+  // From the ICO once the data protection fee is paid. Shown on /privacy.
+  icoNumber: '[ICO registration number]',
   correspondenceAddress: 'Stoke Newington High Street, London N16',
   responseTime: 'We reply within a few hours, 8am to 10pm.',
   hosts: 'Hamza and Emmanuel',
   instagram: '',
   linkedin: '',
+  // Keeps search engines out of the preview. Set to true at launch (Phase 4 checklist).
+  indexable: false,
 };
 
 export const nav = [

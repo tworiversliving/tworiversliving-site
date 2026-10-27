@@ -1,0 +1,150 @@
+---
+// Manage booking: look up by reference and email, then cancel while free cancellation is open.
+import Base from '../layouts/Base.astro';
+import { site } from '../config/site';
+---
+
+<Base title="Manage your booking" description="View or cancel your Two Rivers Living booking." noindex>
+  <div class="container narrow page" data-manage>
+    <h1>Manage your booking</h1>
+
+    <form class="lookup" data-lookup>
+      <p class="muted">Enter the reference from your confirmation email and the email address you booked with.</p>
+      <div class="row">
+        <div class="field">
+          <label for="ref">Booking reference</label>
+          <input id="ref" name="ref" placeholder="TRL-" autocomplete="off" autocapitalize="characters" required />
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required />
+        </div>
+      </div>
+      <p class="error" data-error role="alert" hidden></p>
+      <button type="submit" class="button">Find my booking</button>
+    </form>
+
+    <div data-result hidden>
+      <p class="kicker" data-status></p>
+      <div data-rows></div>
+      <p data-policy></p>
+      <div data-cancel-box hidden>
+        <button type="button" class="button button--ghost" data-cancel></button>
+        <p class="error" data-cancel-error role="alert" hidden></p>
+      </div>
+      <p class="muted small">
+        Questions about your stay? Email <a href={`mailto:${site.email}`}>{site.email}</a>. {site.responseTime}
+      </p>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { bookingRows, fmtDeadline, gbp, postJson, type PublicBooking } from '../scripts/booking';
+
+  const root = document.querySelector<HTMLElement>('[data-manage]')!;
+  const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+  const form = $<HTMLFormElement>('[data-lookup]');
+  const cancelBtn = $<HTMLButtonElement>('[data-cancel]');
+  let creds = { ref: '', email: '' };
+  let current: PublicBooking | null = null;
+
+  const STATUS: Record<string, string> = {
+    confirmed: 'Confirmed and paid',
+    requested: 'Request received, not yet paid',
+    cancelled: 'Cancelled',
+    refunded: 'Cancelled and refunded',
+    conflict: 'Not confirmed, refunded',
+  };
+
+  function render(b: PublicBooking) {
+    current = b;
+    $('[data-status]').textContent = STATUS[b.status] ?? b.status;
+    $('[data-rows]').innerHTML = bookingRows(b);
+    const open = new Date(b.freeCancellationUntil) > new Date();
+    const policy = $('[data-policy]');
+    $('[data-cancel-box]').hidden = !b.canCancel;
+    if (b.status === 'confirmed') {
+      policy.textContent = open
+        ? `You can cancel for a full refund of ${gbp(b.total)} until ${fmtDeadline(b.freeCancellationUntil)}.`
+        : 'Free cancellation has closed for this booking, so it can no longer be refunded online. If your plans have changed, email us and we will see what we can do.';
+      cancelBtn.textContent = `Cancel and refund ${gbp(b.total)}`;
+    } else if (b.status === 'requested') {
+      policy.textContent = 'Nothing has been charged. You can withdraw the request at any time.';
+      cancelBtn.textContent = 'Withdraw this request';
+    } else {
+      policy.textContent = '';
+    }
+    form.hidden = true;
+    $('[data-result]').hidden = false;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = $('[data-error]');
+    err.hidden = true;
+    creds = { ref: String(new FormData(form).get('ref') ?? ''), email: String(new FormData(form).get('email') ?? '') };
+    const res = await postJson<{ booking: PublicBooking }>('/api/booking', creds);
+    if (!res.ok) {
+      err.textContent = res.error ?? 'Something went wrong. Try again.';
+      err.hidden = false;
+      return;
+    }
+    render(res.booking);
+  });
+
+  cancelBtn.addEventListener('click', async () => {
+    if (!current) return;
+    const question =
+      current.status === 'requested' ? 'Withdraw this booking request?' : `Cancel booking ${current.ref}? We'll refund ${gbp(current.total)} to your card.`;
+    if (!confirm(question)) return;
+    cancelBtn.disabled = true;
+    const err = $('[data-cancel-error]');
+    err.hidden = true;
+    const res = await postJson<{ booking: PublicBooking; refundPence: number }>('/api/booking', { ...creds, action: 'cancel' });
+    cancelBtn.disabled = false;
+    if (!res.ok) {
+      err.textContent = res.error ?? 'Something went wrong. Try again.';
+      err.hidden = false;
+      return;
+    }
+    render(res.booking);
+    $('[data-policy]').textContent = res.refundPence
+      ? `Cancelled. We've refunded ${gbp(res.refundPence)} to your card. It usually shows within 5 to 10 working days.`
+      : 'Cancelled. We have emailed you a confirmation.';
+  });
+</script>
+
+<style>
+  .page {
+    padding-top: calc(var(--header-h) + var(--s8));
+    padding-bottom: var(--section);
+  }
+  h1 {
+    font-size: var(--text-2xl);
+  }
+  .lookup {
+    display: grid;
+    gap: var(--s3);
+  }
+  .row {
+    display: grid;
+    gap: var(--s2);
+  }
+  @media (min-width: 640px) {
+    .row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .button {
+    justify-self: start;
+  }
+  .button:disabled {
+    opacity: 0.5;
+  }
+  .error {
+    margin: var(--s1) 0 0;
+    color: var(--error);
+    font-weight: 600;
+  }
+</style>

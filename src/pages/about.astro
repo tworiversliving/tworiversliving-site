@@ -1,0 +1,55 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../config/site';
+---
+
+<Base title="About us" description={`${site.name} is run by ${site.hosts}, two locals who were born and raised in Stoke Newington.`}>
+  <div class="container narrow page-head">
+    <img class="logo" src="/brand/logo-stacked.svg" alt={site.name} width="180" height="132" />
+    <p class="small muted">Named for the two rivers our families come from.</p>
+  </div>
+
+  <div class="container narrow body">
+    <h1>Two locals, looking after homes in the area we grew up in</h1>
+    <p>
+      We're {site.hosts}. We were born and raised in Stoke Newington and still live a few minutes from the flat. We started
+      {site.name} to give visitors the kind of place we'd want to stay in ourselves.
+    </p>
+    <p>
+      We host it ourselves. Check-in is with a lockbox, so you can arrive when it suits you, and one of us is always on call
+      if anything comes up. Every guest gets our own guidebook to the area: the places we actually go.
+    </p>
+    <p>
+      Every home we take on has private bedrooms with proper beds, a kitchen you can cook a real meal in, a desk to work at,
+      and wifi throughout. If it isn't somewhere we'd stay, we don't list it.
+    </p>
+    <p class="links">
+      <a class="button" href="/stays">See our stays</a>
+      <a class="button button--ghost" href="/contact">Get in touch</a>
+    </p>
+  </div>
+</Base>
+
+<style>
+  .logo {
+    width: 180px;
+    height: auto;
+    margin-bottom: var(--s2);
+  }
+  .body {
+    padding-bottom: var(--section);
+  }
+  .body h1 {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--s4);
+  }
+  .body p {
+    font-size: var(--text-lg);
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    margin-top: var(--s5);
+  }
+</style>

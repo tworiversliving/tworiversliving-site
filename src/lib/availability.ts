@@ -26,7 +26,7 @@ async function directlyTaken(env: Env, slug: string, from: string, to: string, i
   const [bookings, holds] = await Promise.all([
     env.DB.prepare(
       `SELECT ref, check_in, check_out FROM bookings
-       WHERE property = ? AND status IN ('confirmed','pending') AND check_in < ? AND check_out > ?`,
+       WHERE property = ? AND status = 'confirmed' AND check_in < ? AND check_out > ?`,
     ).bind(slug, to, from).all<{ ref: string; check_in: string; check_out: string }>(),
     env.DB.prepare(
       `SELECT booking_ref AS ref, check_in, check_out FROM holds

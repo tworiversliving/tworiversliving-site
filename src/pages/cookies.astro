@@ -1,0 +1,62 @@
+---
+import Legal from '../layouts/Legal.astro';
+import { site } from '../config/site';
+
+// If marketing tags (Meta Pixel, Google Ads) are ever added, they need a consent banner first (PECR), and this page needs updating.
+---
+
+<Legal
+  title="Cookies"
+  description={`${site.name} uses no advertising or tracking cookies. Here is what is stored in your browser and why.`}
+  updated="2026-10-27"
+  intro="We don't use advertising or tracking cookies, so there's no cookie banner. The only things stored in your browser are needed to take a booking safely."
+>
+  <h2>What is stored, and why</h2>
+  <div class="table">
+    <table>
+      <thead>
+        <tr><th scope="col">Name</th><th scope="col">Set by</th><th scope="col">What for</th><th scope="col">How long</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>__stripe_mid, __stripe_sid</td>
+          <td>Stripe</td>
+          <td>Fraud prevention on the payment step. Only set on the checkout page when you pay by card.</td>
+          <td>1 year and 30 minutes</td>
+        </tr>
+        <tr>
+          <td>__cf_bm</td>
+          <td>Cloudflare</td>
+          <td>Telling people from bots, to protect the site. Only set if Cloudflare's bot protection is triggered.</td>
+          <td>30 minutes</td>
+        </tr>
+        <tr>
+          <td>booking:[reference]</td>
+          <td>This site (session storage, not a cookie)</td>
+          <td>Shows your booking summary on the confirmation page after you book.</td>
+          <td>Until you close the tab</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Our contact and enquiry forms are checked for spam by Cloudflare Turnstile, which runs a short check in your browser. Cloudflare uses
+    what it collects only for that check.
+  </p>
+  <p>
+    These are all strictly necessary for the site to work securely, so the law doesn't require us to ask first. You can still block or
+    delete them in your browser settings, but paying for a booking may not work if you do.
+  </p>
+
+  <h2>Counting visits</h2>
+  <p>
+    We see how many people visit and which pages they read through Cloudflare Web Analytics. It doesn't use cookies, doesn't store
+    anything on your device and doesn't follow you across other websites.
+  </p>
+
+  <h2>If this changes</h2>
+  <p>
+    If we ever add cookies that aren't strictly necessary, such as for advertising, we'll ask for your permission first and update this
+    page. Our <a href="/privacy">privacy policy</a> covers how we use personal information more generally.
+  </p>
+</Legal>

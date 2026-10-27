@@ -1,0 +1,112 @@
+---
+import Base from '../../layouts/Base.astro';
+import PropertyCard from '../../components/PropertyCard.astro';
+import { booking } from '../../config/booking';
+import { properties } from '../../data/properties';
+
+const maxGuests = Math.max(...properties.map((p) => p.guests));
+const areas = [...new Set(properties.map((p) => p.area))];
+---
+
+<Base title="Stays" description="Book our homes in North London direct with the hosts, with no booking fees.">
+  <div class="container page-head">
+    <span class="kicker">Stays</span>
+    <h1>Where you can stay</h1>
+    <p>Pick your dates to see the total for your stay. The price shown is the price you pay.</p>
+  </div>
+
+  <div class="container">
+    <!-- Phase 2: with dates set, each card shows "Available" and the total, or greys out. -->
+    <form class="filter" action="/stays" method="get" data-stays-filter>
+      <div class="field">
+        <label for="checkin">Check-in</label>
+        <input id="checkin" name="checkin" type="date" />
+      </div>
+      <div class="field">
+        <label for="checkout">Check-out</label>
+        <input id="checkout" name="checkout" type="date" />
+      </div>
+      <div class="field">
+        <label for="guests">Guests</label>
+        <select id="guests" name="guests">
+          {Array.from({ length: maxGuests }, (_, i) => <option value={i + 1}>{i + 1}</option>)}
+        </select>
+      </div>
+      {
+        areas.length > 1 && (
+          <div class="field">
+            <label for="area">Area</label>
+            <select id="area" name="area">
+              <option value="">Anywhere</option>
+              {areas.map((a) => (
+                <option>{a}</option>
+              ))}
+            </select>
+          </div>
+        )
+      }
+      <button class="button" type="submit">Update</button>
+    </form>
+  </div>
+
+  <section class="section stays-section">
+    <div class="container stays">
+      {properties.map((p) => <PropertyCard property={p} />)}
+    </div>
+    <div class="container">
+      <p class="muted long">
+        Staying {booking.maxInstantNights + 1} nights or more? <a href="/work-stays">Ask about work and long stays</a>.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Carry dates and guests over from the home page search.
+  const form = document.querySelector<HTMLFormElement>('[data-stays-filter]');
+  const params = new URLSearchParams(location.search);
+  if (form) {
+    for (const name of ['checkin', 'checkout', 'guests', 'area']) {
+      const el = form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null;
+      const value = params.get(name);
+      if (el && value) el.value = value;
+    }
+  }
+</script>
+
+<style>
+  .filter {
+    display: grid;
+    gap: var(--s2);
+    padding: var(--s3);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  @media (min-width: 768px) {
+    .filter {
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      align-items: end;
+    }
+  }
+  .stays-section {
+    padding-top: var(--s6);
+  }
+  .stays {
+    display: grid;
+    gap: var(--s4);
+  }
+  @media (min-width: 768px) {
+    .stays {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 1100px) {
+    .stays {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .long {
+    margin-top: var(--s4);
+  }
+</style>

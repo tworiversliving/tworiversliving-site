@@ -1,0 +1,119 @@
+---
+// After payment (Stripe returns here with ?session_id=) or after a booking request (?ref=).
+import Base from '../../layouts/Base.astro';
+import { site } from '../../config/site';
+---
+
+<Base title="Your booking" description="Your booking with Two Rivers Living." noindex>
+  <div class="container narrow page" data-confirmed>
+    <div data-state="loading">
+      <h1>Confirming your payment</h1>
+      <p class="muted">This usually takes a few seconds. Please don't close the page.</p>
+    </div>
+
+    <div data-state="confirmed" hidden>
+      <span class="kicker">Booking confirmed</span>
+      <h1>You're booked, <span data-name></span></h1>
+      <p class="lead">We've emailed your confirmation and receipt. Your booking reference is <strong data-ref></strong>.</p>
+      <div data-rows></div>
+      <p data-cancel></p>
+      <p>We'll email the address, how to get in and the wifi details 48 hours before you arrive.</p>
+      <p><a class="text-link" href="/booking">View or cancel this booking</a></p>
+    </div>
+
+    <div data-state="requested" hidden>
+      <span class="kicker">Request received</span>
+      <h1>Thanks<span data-name-comma></span>. We have your request</h1>
+      <p class="lead">Nothing has been charged. We'll check the dates and reply within a few hours with a confirmation and a secure link to pay.</p>
+      <p data-ref-line hidden>Your reference is <strong data-ref></strong>.</p>
+      <div data-rows></div>
+      <p class="muted">We've sent a copy to your email. If it hasn't arrived in a few minutes, check your spam folder or email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+    </div>
+
+    <div data-state="conflict" hidden>
+      <h1>We couldn't confirm this booking</h1>
+      <p class="lead">While you were paying, the last of those nights was booked by another guest. We've refunded the full amount to your card. It usually shows within 5 to 10 working days.</p>
+      <p>We're sorry. If you'd like to look at other dates, email <a href={`mailto:${site.email}`}>{site.email}</a> and we'll help.</p>
+      <a class="button" href="/stays">See available dates</a>
+    </div>
+
+    <div data-state="error" hidden>
+      <h1>We're checking your booking</h1>
+      <p class="lead">We couldn't load the details just now. If you paid, your confirmation email is on its way.</p>
+      <p>If it hasn't arrived within 15 minutes, email <a href={`mailto:${site.email}`}>{site.email}</a> and we'll confirm by hand.</p>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { bookingRows, fmtDeadline, type PublicBooking } from '../../scripts/booking';
+
+  const root = document.querySelector<HTMLElement>('[data-confirmed]')!;
+  const show = (state: string) => root.querySelectorAll<HTMLElement>('[data-state]').forEach((el) => (el.hidden = el.dataset.state !== state));
+  const fill = (state: string, b: PublicBooking) => {
+    const box = root.querySelector<HTMLElement>(`[data-state="${state}"]`)!;
+    box.querySelectorAll('[data-name]').forEach((el) => (el.textContent = b.firstName));
+    box.querySelectorAll('[data-name-comma]').forEach((el) => (el.textContent = `, ${b.firstName}`));
+    box.querySelectorAll('[data-ref]').forEach((el) => (el.textContent = b.ref));
+    box.querySelector<HTMLElement>('[data-ref-line]')?.removeAttribute('hidden');
+    const rows = box.querySelector('[data-rows]');
+    if (rows) rows.innerHTML = bookingRows(b);
+    const cancel = box.querySelector('[data-cancel]');
+    if (cancel) {
+      cancel.textContent =
+        new Date(b.freeCancellationUntil) > new Date()
+          ? `You can cancel for a full refund until ${fmtDeadline(b.freeCancellationUntil)}.`
+          : 'Your stay starts within the free cancellation window, so this booking is non-refundable.';
+    }
+    show(state);
+  };
+
+  const qs = new URLSearchParams(location.search);
+  const sessionId = qs.get('session_id');
+  const ref = qs.get('ref');
+
+  if (sessionId) {
+    // The webhook usually lands first; poll briefly in case it hasn't.
+    let tries = 0;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/booking?session_id=${encodeURIComponent(sessionId)}`);
+        const data = (await res.json()) as { ok: boolean; booking?: PublicBooking };
+        const b = data.booking;
+        if (b?.status === 'confirmed') return fill('confirmed', b);
+        if (b?.status === 'conflict' || b?.status === 'refunded') return show('conflict');
+        if (!data.ok && res.status === 404) return show('error');
+      } catch {
+        /* retry below */
+      }
+      if (++tries < 15) setTimeout(poll, 2000);
+      else show('error');
+    };
+    poll();
+  } else if (ref) {
+    let b: PublicBooking | null = null;
+    try {
+      b = JSON.parse(sessionStorage.getItem(`booking:${ref}`) ?? 'null');
+    } catch {
+      /* show the short version */
+    }
+    if (b) fill('requested', b);
+    else {
+      root.querySelectorAll('[data-state="requested"] [data-ref]').forEach((el) => (el.textContent = ref));
+      root.querySelector('[data-state="requested"] [data-ref-line]')?.removeAttribute('hidden');
+      show('requested');
+    }
+  } else {
+    show('error');
+  }
+</script>
+
+<style>
+  .page {
+    padding-top: calc(var(--header-h) + var(--s8));
+    padding-bottom: var(--section);
+  }
+  h1 {
+    font-size: var(--text-2xl);
+  }
+</style>

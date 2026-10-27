@@ -1,0 +1,337 @@
+---
+import Base from '../layouts/Base.astro';
+import Photo from '../components/Photo.astro';
+import PropertyCard from '../components/PropertyCard.astro';
+import Reviews from '../components/Reviews.astro';
+import Faq from '../components/Faq.astro';
+import { booking } from '../config/booking';
+import { site } from '../config/site';
+import { properties } from '../data/properties';
+import { homeFaqs } from '../data/faq';
+
+const featured = properties[0];
+const hero = featured.photos.find((p) => p.file === featured.heroPhoto);
+const living = featured.photos.find((p) => p.room === 'Living room');
+const desk = featured.photos.find((p) => p.room === 'Workspace');
+const neighbourhood = featured.photos.filter((p) => p.room === 'Neighbourhood').slice(0, 3);
+const reviews = properties.flatMap((p) => p.reviews);
+const maxGuests = Math.max(...properties.map((p) => p.guests));
+const areaSlugs = [...new Set(properties.map((p) => p.areaSlug))];
+---
+
+<Base
+  title={site.name}
+  description="Book a three-bedroom flat in Stoke Newington direct with the hosts. Lower prices than the booking platforms, no booking fees, for short breaks and work trips."
+  overlayHeader
+>
+  <section class="hero">
+    <Photo
+      slug={featured.slug}
+      file={hero?.file}
+      alt={hero?.alt ?? ''}
+      label={hero?.room}
+      ratio="auto"
+      sizes="100vw"
+      widths={[800, 1200, 1600, 2400]}
+      eager
+      class="hero__photo"
+    />
+    <div class="container hero__content">
+      <h1>Stoke Newington, booked direct.</h1>
+      <p class="hero__sub">A three-bedroom flat a minute from Church Street, for short breaks and work trips.</p>
+
+      <form class="search" action="/stays" method="get">
+        <div class="field">
+          <label for="checkin">Check-in</label>
+          <input id="checkin" name="checkin" type="date" />
+        </div>
+        <div class="field">
+          <label for="checkout">Check-out</label>
+          <input id="checkout" name="checkout" type="date" />
+        </div>
+        <div class="field">
+          <label for="guests">Guests</label>
+          <select id="guests" name="guests">
+            {Array.from({ length: maxGuests }, (_, i) => <option value={i + 1} selected={i === 1}>{i + 1}</option>)}
+          </select>
+        </div>
+        <button class="button" type="submit">Search</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2 class="visually-hidden">Why book direct</h2>
+      <ul class="points">
+        <li>
+          <h3>Our lowest price is here</h3>
+          <p class="muted">The nightly rate on this site is always below the price on the booking platforms.</p>
+        </li>
+        <li>
+          <h3>One price, no booking fees</h3>
+          <p class="muted">No service fee and no cleaning fee. The price you see first is the price you pay.</p>
+        </li>
+        <li>
+          <h3>Speak to the hosts, not a call centre</h3>
+          <p class="muted">Questions go straight to {site.hosts}. {site.responseTime}</p>
+        </li>
+      </ul>
+      <p><a class="text-link" href="/book-direct">More on booking direct</a></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <span class="kicker">Our homes</span>
+      <h2>Where you can stay</h2>
+      <div class="stays">
+        {properties.map((p) => <PropertyCard property={p} />)}
+        {
+          properties.length === 1 && (
+            <aside class="long-stay">
+              <span class="kicker">Work and long stays</span>
+              <p class="display long-stay__title">Staying {booking.maxInstantNights + 1} nights or more?</p>
+              <p class="muted">Ask about work and long stays. We quote for the whole flat, with invoices in your company name.</p>
+              <a href="/work-stays" class="button button--ghost">See work stays</a>
+            </aside>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--paper">
+    <div class="container">
+      <span class="kicker">Two ways to stay</span>
+      <h2 class="visually-hidden">Two ways to stay</h2>
+      <div class="grid-2">
+        <a class="way" href="/stays">
+          <Photo slug={featured.slug} file={living?.file} alt={living?.alt ?? ''} label={living?.room} sizes="(min-width: 768px) 50vw, 100vw" />
+          <h3 class="display way__title">Short stays</h3>
+          <p class="muted">Weekends, family visits and breaks of up to {booking.maxInstantNights} nights, booked instantly.</p>
+          <span class="text-link">Find dates</span>
+        </a>
+        <a class="way" href="/work-stays">
+          <Photo slug={featured.slug} file={desk?.file} alt={desk?.alt ?? ''} label={desk?.room} sizes="(min-width: 768px) 50vw, 100vw" />
+          <h3 class="display way__title">Work and long stays</h3>
+          <p class="muted">The whole flat for teams and placements, from {booking.maxInstantNights + 1} nights to three months.</p>
+          <span class="text-link">See work stays</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  {
+    reviews.length > 0 && (
+      <section class="section">
+        <div class="container">
+          <span class="kicker">Reviews</span>
+          <h2>What guests said</h2>
+          <Reviews reviews={reviews} />
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section">
+    <div class="container">
+      <span class="kicker">The neighbourhood</span>
+      <h2>A minute from Church Street</h2>
+      <div class="hood">
+        {
+          neighbourhood.map((ph) => (
+            <Photo slug={featured.slug} file={ph.file} alt={ph.alt} label={ph.room} sizes="(min-width: 768px) 33vw, 100vw" />
+          ))
+        }
+      </div>
+      <p class="times">
+        {featured.walkingTimes.slice(0, 3).map((w) => `${w.place} ${w.time.replace(' walk', '')}`).join(' · ')}
+      </p>
+      {areaSlugs.map((slug) => <a class="text-link" href={`/areas/${slug}`}>Read our Stoke Newington guide</a>)}
+    </div>
+  </section>
+
+  <section class="section section--paper">
+    <div class="container hosts">
+      <img src="/brand/mark.svg" alt="" width="64" height="40" />
+      <p class="display hosts__line">Run by {site.hosts}, who grew up here.</p>
+      <a class="text-link" href="/about">About us</a>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container narrow">
+      <span class="kicker">Questions</span>
+      <h2>Before you book</h2>
+      <Faq items={homeFaqs} />
+      <p class="more"><a class="text-link" href="/faq">All questions</a></p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: min(92svh, 860px);
+    padding-top: calc(var(--header-h) + var(--s6));
+    padding-bottom: var(--s6);
+    color: var(--mist);
+    background: var(--forest-soft);
+  }
+  .hero :global(.hero__photo) {
+    position: absolute;
+    inset: 0;
+    border-radius: 0;
+    background: var(--forest-soft);
+  }
+  .hero :global(.hero__photo .photo__placeholder) {
+    color: var(--mist);
+    align-content: start;
+    padding-top: calc(var(--header-h) + var(--s4));
+  }
+  /* Soft forest overlay top and bottom so the header and headline stay legible on any photo */
+  .hero::before,
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    pointer-events: none;
+  }
+  .hero::before {
+    top: 0;
+    height: 160px;
+    background: linear-gradient(rgba(47, 58, 43, 0.45), rgba(47, 58, 43, 0));
+  }
+  .hero::after {
+    bottom: 0;
+    height: 70%;
+    background: linear-gradient(rgba(47, 58, 43, 0), rgba(47, 58, 43, 0.75));
+  }
+  .hero__content {
+    position: relative;
+    z-index: 1;
+  }
+  .hero h1 {
+    max-width: 12em;
+  }
+  .hero__sub {
+    max-width: 30em;
+    font-size: var(--text-lg);
+    margin-bottom: var(--s4);
+  }
+
+  .search {
+    display: grid;
+    gap: var(--s2);
+    max-width: 880px;
+    padding: var(--s3);
+    background: var(--paper);
+    color: var(--forest);
+    border-radius: var(--radius);
+  }
+  @media (min-width: 768px) {
+    .search {
+      grid-template-columns: 1fr 1fr 0.7fr auto;
+      align-items: end;
+    }
+  }
+
+  .points {
+    display: grid;
+    gap: var(--s4);
+    margin: 0 0 var(--s3);
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 768px) {
+    .points {
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--s6);
+    }
+  }
+  .points li {
+    padding-top: var(--s3);
+    border-top: 1px solid var(--brass);
+  }
+  .points h3 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: var(--text-xl);
+  }
+
+  .stays {
+    display: grid;
+    gap: var(--s4);
+  }
+  @media (min-width: 768px) {
+    .stays {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .long-stay {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: var(--s5) var(--s4);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .long-stay__title {
+    font-size: var(--text-2xl);
+    line-height: 1.15;
+  }
+
+  .way {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+  }
+  .way__title {
+    margin-top: var(--s3);
+    font-size: var(--text-2xl);
+    font-weight: 400;
+  }
+  .way:hover .text-link {
+    text-decoration: none;
+  }
+  .way .text-link {
+    text-decoration: underline;
+  }
+
+  .hood {
+    display: grid;
+    gap: var(--s2);
+    margin-bottom: var(--s3);
+  }
+  @media (min-width: 768px) {
+    .hood {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .times {
+    font-size: var(--text-lg);
+  }
+
+  .hosts {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+  .hosts img {
+    width: 64px;
+    height: auto;
+    margin-bottom: var(--s3);
+  }
+  .hosts__line {
+    font-size: var(--text-2xl);
+    line-height: 1.2;
+    max-width: 18em;
+  }
+  .more {
+    margin-top: var(--s3);
+  }
+</style>
