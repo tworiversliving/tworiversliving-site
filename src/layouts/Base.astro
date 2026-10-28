@@ -1,6 +1,12 @@
 ---
-import '@fontsource-variable/manrope';
-import '@fontsource-variable/newsreader';
+// Only the weights in docs/redesign/BRIEF.md 2.1, Latin subset
+import '@fontsource/redaction/latin-400.css';
+import '@fontsource/redaction/latin-400-italic.css';
+import '@fontsource/redaction-50/latin-400.css';
+import '@fontsource/host-grotesk/latin-400.css';
+import '@fontsource/host-grotesk/latin-500.css';
+import '@fontsource/fragment-mono/latin-400.css';
+import redaction400 from '@fontsource/redaction/files/redaction-latin-400-normal.woff2?url';
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -11,8 +17,6 @@ import { breadcrumbs, organization } from '../lib/schema';
 interface Props {
   title: string;
   description: string;
-  /** Header sits transparent over a full-bleed hero until the page scrolls. */
-  overlayHeader?: boolean;
   noindex?: boolean;
   /** Photo for the social share image. Defaults to the first property's ogPhoto. */
   ogPhoto?: PhotoRef;
@@ -22,7 +26,7 @@ interface Props {
   crumbs?: { name: string; path: string }[];
 }
 
-const { title, description, overlayHeader = false, noindex = false, ogPhoto, schema = [], crumbs } = Astro.props;
+const { title, description, noindex = false, ogPhoto, schema = [], crumbs } = Astro.props;
 const fullTitle = title === site.name ? title : `${title} | ${site.name}`;
 const canonical = new URL(Astro.url.pathname.replace(/\/$/, '') || '/', site.url).href;
 const robots = noindex || !site.indexable ? 'noindex, nofollow' : 'index, follow';
@@ -38,13 +42,14 @@ const ld = (data: object) => JSON.stringify(data).replace(/</g, '\\u003c');
 <html lang="en-GB">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta name="robots" content={robots} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <meta name="theme-color" content="#EEF0E8" />
+    <meta name="theme-color" content="#FAFAF6" />
+    <link rel="preload" href={redaction400} as="font" type="font/woff2" crossorigin />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.name} />
     <meta property="og:title" content={fullTitle} />
@@ -67,7 +72,7 @@ const ld = (data: object) => JSON.stringify(data).replace(/</g, '\\u003c');
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
-    <Header overlay={overlayHeader} />
+    <Header />
     <main id="main">
       <slot />
     </main>
@@ -84,7 +89,7 @@ const ld = (data: object) => JSON.stringify(data).replace(/</g, '\\u003c');
     padding: var(--s1) var(--s2);
     background: var(--forest);
     color: var(--mist);
-    border-radius: var(--radius);
+    border-radius: var(--r-pill);
   }
   .skip:focus {
     top: var(--s2);

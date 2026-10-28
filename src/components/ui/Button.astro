@@ -1,0 +1,30 @@
+---
+// Pill button. A link when href is set, otherwise a <button>. Styles live in global.css (.button).
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = HTMLAttributes<'a'> &
+  HTMLAttributes<'button'> & {
+    /** primary: forest fill. secondary: outline in the current colour. paper: for forest grounds. price: primary on two lines. */
+    variant?: 'primary' | 'secondary' | 'paper' | 'price';
+    /** Second line on the price variant, e.g. 'from £216 a night'. */
+    sub?: string;
+    block?: boolean;
+  };
+
+const { variant = 'primary', sub, block = false, href, type = 'button', class: className, ...rest } = Astro.props;
+const classes = ['button', variant !== 'primary' && `button--${variant}`, block && 'button--block', className];
+---
+
+{
+  href ? (
+    <a href={href} class:list={classes} {...rest}>
+      <span><slot /></span>
+      {variant === 'price' && sub && <span class="button__sub">{sub}</span>}
+    </a>
+  ) : (
+    <button type={type} class:list={classes} {...rest}>
+      <span><slot /></span>
+      {variant === 'price' && sub && <span class="button__sub">{sub}</span>}
+    </button>
+  )
+}

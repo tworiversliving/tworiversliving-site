@@ -24,9 +24,8 @@ export const site = {
 };
 
 export const nav = [
-  { href: '/stays', label: 'Stays' },
-  { href: '/work-stays', label: 'Work stays' },
+  { href: '/stays/stoke-newington-3-bed', label: 'The flat' },
+  { href: '/work-stays', label: 'Work & long stays' },
   { href: '/areas/stoke-newington', label: 'Stoke Newington' },
-  { href: '/about', label: 'About' },
-  { href: '/contact', label: 'Contact' },
+  { href: '/faq', label: 'Questions' },
 ];

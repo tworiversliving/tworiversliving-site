@@ -1,0 +1,12 @@
+---
+// Mono uppercase label. Use one only where it adds information, not above every heading.
+interface Props {
+  as?: 'p' | 'span' | 'div' | 'h2' | 'h3';
+  tone?: 'brass' | 'soft' | 'on-forest';
+  class?: string;
+}
+
+const { as: Tag = 'p', tone = 'brass', class: className } = Astro.props;
+---
+
+<Tag class:list={['label', tone !== 'brass' && `label--${tone}`, className]}><slot /></Tag>

@@ -1,13 +1,13 @@
 ---
 import { site } from '../config/site';
 import { properties } from '../data/properties';
+import { todo } from '../data/todo';
 
 const columns = [
   {
     title: 'Stay',
     links: [
-      { href: '/stays', label: 'All stays' },
-      ...properties.map((p) => ({ href: `/stays/${p.slug}`, label: p.area })),
+      ...properties.map((p) => ({ href: `/stays/${p.slug}`, label: 'The flat' })),
       { href: '/work-stays', label: 'Work and long stays' },
       { href: '/book-direct', label: 'Why book direct' },
       { href: '/booking', label: 'Manage a booking' },
@@ -18,7 +18,7 @@ const columns = [
     links: [
       { href: '/about', label: 'About us' },
       { href: '/areas/stoke-newington', label: 'Stoke Newington guide' },
-      { href: '/faq', label: 'FAQ' },
+      { href: '/faq', label: 'Questions' },
       { href: '/contact', label: 'Contact' },
     ],
   },
@@ -38,20 +38,18 @@ const columns = [
   <div class="container">
     <div class="footer__top">
       <div class="footer__brand">
-        <a href="/" aria-label={`${site.name}, home`}>
-          <img src="/brand/logo-stacked-light.svg" alt="" width="140" height="103" />
-        </a>
-        <p>
-          <a href={`mailto:${site.email}`}>{site.email}</a><br />
-          {site.phoneHref ? <a href={site.phoneHref}>{site.phone}</a> : <span class="todo">[phone number to add]</span>}
+        <a href="/" class="footer__wordmark">{site.name}</a>
+        <p class="mono footer__contact">
+          <a href={`mailto:${site.email}`}>{site.email}</a>
+          {todo.whatsappHref && <a href={todo.whatsappHref}>WhatsApp {todo.whatsapp}</a>}
         </p>
-        <p class="small">{site.responseTime}</p>
+        <p class="footer__note">{site.responseTime}</p>
       </div>
 
       {
         columns.map((col) => (
           <nav class="footer__col" aria-label={col.title}>
-            <h2 class="kicker">{col.title}</h2>
+            <h2 class="label label--on-forest">{col.title}</h2>
             <ul>
               {col.links.map((l) => (
                 <li>
@@ -64,20 +62,18 @@ const columns = [
       }
     </div>
 
-    <p class="footer__legal small">
-      {site.legalName}. Registered in England and Wales, company no. {site.companyNumber}. Registered office: {site.registeredOffice}.
-    </p>
+    <p class="footer__legal mono">{site.legalName} · London</p>
   </div>
 </footer>
 
 <style>
   .footer {
-    background: var(--forest);
-    color: var(--mist);
-    padding-block: var(--s8) var(--s4);
+    background: var(--ink);
+    color: var(--on-forest);
+    padding-block: var(--s8) max(var(--s4), env(safe-area-inset-bottom));
   }
   .footer a {
-    color: var(--mist);
+    color: var(--on-forest);
     text-decoration: none;
   }
   .footer a:hover {
@@ -86,51 +82,56 @@ const columns = [
 
   .footer__top {
     display: grid;
-    gap: var(--s5);
+    gap: var(--s5) var(--s4);
+    grid-template-columns: 1fr 1fr;
   }
-  @media (min-width: 640px) {
-    .footer__top {
-      grid-template-columns: 1fr 1fr;
-    }
+  .footer__brand {
+    grid-column: 1 / -1;
   }
-  @media (min-width: 960px) {
+  @media (min-width: 900px) {
     .footer__top {
       grid-template-columns: 2fr 1fr 1fr 1fr;
     }
+    .footer__brand {
+      grid-column: auto;
+    }
   }
 
-  .footer__brand img {
-    width: 140px;
-    height: auto;
+  .footer__wordmark {
+    display: inline-block;
     margin-bottom: var(--s3);
+    font-family: var(--font-display);
+    font-size: var(--t-h3);
+    line-height: 1.1;
   }
-  .footer__brand .small {
-    opacity: 0.8;
+  .footer__contact {
+    display: grid;
+    gap: 6px;
+    margin-bottom: var(--s2);
+  }
+  .footer__note {
+    margin: 0;
+    font-size: var(--t-small);
+    color: var(--on-forest-2);
   }
 
-  .footer .kicker {
-    /* Brass fails contrast for small text on forest, so labels stay mist here */
-    color: var(--mist);
-    opacity: 0.7;
-    font-size: 0.75rem;
-  }
   .footer ul {
     margin: 0;
     padding: 0;
     list-style: none;
   }
   .footer li {
-    margin-bottom: var(--s1);
+    font-size: var(--t-small);
   }
-
-  .footer .todo {
-    color: var(--mist);
+  .footer li a {
+    display: inline-block;
+    padding-block: 10px; /* 44px tap target */
   }
 
   .footer__legal {
     margin: var(--s8) 0 0;
     padding-top: var(--s3);
     border-top: 1px solid var(--line-dark);
-    opacity: 0.8;
+    color: var(--on-forest-2);
   }
 </style>

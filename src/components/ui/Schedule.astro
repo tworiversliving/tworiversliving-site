@@ -1,0 +1,118 @@
+---
+// The "floor plan" schedule: hard facts as key and value rows in a real <dl>.
+// Rows with an empty value are dropped, so an unfilled TODO hides its line.
+interface Row {
+  key: string;
+  value: string;
+  href?: string;
+}
+
+interface Props {
+  rows: Row[];
+  /** default: ruled rows. inline: no rules, for the hero. distance: place left, time right in mono. */
+  variant?: 'default' | 'inline' | 'distance';
+  /** Mist ground uses the darker mist rule. */
+  ground?: 'paper' | 'mist';
+  /** Two columns of rows on desktop (default variant only). */
+  columns?: 1 | 2;
+  class?: string;
+}
+
+const { rows, variant = 'default', ground = 'paper', columns = 1, class: className } = Astro.props;
+const shown = rows.filter((r) => r.value.trim() !== '');
+---
+
+<dl class:list={['schedule', `schedule--${variant}`, { 'schedule--mist': ground === 'mist', 'schedule--cols': columns === 2 }, className]}>
+  {
+    shown.map((r) => (
+      <div class="schedule__row">
+        <dt>{r.key}</dt>
+        <dd>{r.href ? <a href={r.href}>{r.value}</a> : r.value}</dd>
+      </div>
+    ))
+  }
+</dl>
+
+<style>
+  .schedule {
+    --rule: var(--line);
+    --key-w: clamp(96px, 28vw, 118px);
+    margin: 0;
+    border-top: 1px solid var(--line-strong);
+  }
+  .schedule--mist {
+    --rule: var(--line-mist);
+  }
+  @media (min-width: 900px) {
+    .schedule {
+      --key-w: 200px;
+    }
+    .schedule--cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: var(--s5);
+    }
+  }
+
+  .schedule__row {
+    display: grid;
+    grid-template-columns: var(--key-w) 1fr;
+    gap: var(--s2);
+    padding-block: 12px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  dt {
+    padding-top: 0.2em;
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    line-height: 1.4;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--forest-soft);
+  }
+  dd {
+    margin: 0;
+    color: var(--ink);
+  }
+
+  /* Distance: place on the left in sans, time on the right in mono */
+  .schedule--distance .schedule__row {
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+  }
+  .schedule--distance dt {
+    padding: 0;
+    font-family: var(--font-sans);
+    font-size: var(--t-body);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink);
+  }
+  .schedule--distance dd {
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    text-align: right;
+    color: var(--forest-soft);
+  }
+
+  /* Inline: key and value pairs in mono, no rules */
+  .schedule--inline {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px var(--s2);
+    border-top: 0;
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    line-height: 1.45;
+  }
+  .schedule--inline .schedule__row {
+    display: contents;
+  }
+  .schedule--inline dt {
+    padding: 0;
+  }
+  .schedule--inline dd {
+    color: var(--ink);
+  }
+</style>

@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import Photo from '../../components/Photo.astro';
+import Photo from '../../components/ui/Photo.astro';
 import PropertyCard from '../../components/PropertyCard.astro';
 import Text from '../../components/Text.astro';
 import { areas, type Area } from '../../data/areas';
@@ -68,7 +68,7 @@ const areaPhoto = area.sections.flatMap((s) => s.photos ?? [])[0];
           {source &&
             s.photos?.map((file) => {
               const ph = source.photos.find((x) => x.file === file);
-              return <Photo slug={source.slug} file={file} alt={ph?.alt ?? ''} label={ph?.room} sizes="(min-width: 800px) 760px, 100vw" />;
+              return <Photo slug={source.slug} file={file} alt={ph?.alt ?? ''} sizes="(min-width: 800px) 760px, 100vw" />;
             })}
         </section>
       ))

@@ -2,7 +2,7 @@
 // Checkout: stay, extras, guest details, then Stripe Embedded Checkout (or a booking request when
 // Stripe isn't set up). Static page; dates come from the query string and are priced by /api/quote.
 import Base from '../../layouts/Base.astro';
-import Photo from '../../components/Photo.astro';
+import Photo from '../../components/ui/Photo.astro';
 import { booking, extras } from '../../config/booking';
 import { properties, type Property } from '../../data/properties';
 
@@ -131,7 +131,7 @@ const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
           <strong data-sum-total></strong>
         </summary>
         <div class="summary__body">
-          <Photo slug={p.slug} file={card?.file} alt={card?.alt ?? p.name} label={p.name} sizes="360px" />
+          <Photo slug={p.slug} file={card?.file} alt={card?.alt ?? p.name} sizes="360px" />
           <p class="kicker summary__kicker">{p.area}</p>
           <p class="summary__name">{p.name}</p>
           <p class="small muted" data-sum-dates></p>

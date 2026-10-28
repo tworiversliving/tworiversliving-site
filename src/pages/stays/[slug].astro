@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import BookingPanel from '../../components/BookingPanel.astro';
-import Photo from '../../components/Photo.astro';
+import Photo from '../../components/ui/Photo.astro';
 import Reviews from '../../components/Reviews.astro';
 import Text from '../../components/Text.astro';
 import AreaMap from '../../components/AreaMap.astro';
@@ -48,8 +48,7 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
             slug={p.slug}
             file={ph.file}
             alt={ph.alt}
-            label={ph.room}
-            ratio="3 / 2"
+            ratio="3/2"
             sizes={i === 0 ? '(min-width: 960px) 600px, 100vw' : '(min-width: 960px) 300px, 50vw'}
             eager={i === 0}
             class={i === 0 ? 'gallery__main' : 'gallery__thumb'}
@@ -83,7 +82,7 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
               const ph = photoFor(r.photo);
               return (
                 <div class="room">
-                  <Photo slug={p.slug} file={r.photo} alt={ph?.alt ?? r.room} label={r.room} sizes="(min-width: 960px) 240px, 100vw" />
+                  <Photo slug={p.slug} file={r.photo} alt={ph?.alt ?? r.room} sizes="(min-width: 960px) 240px, 100vw" />
                   <h3>{r.room}</h3>
                   <p class="muted small">{r.bed}</p>
                 </div>
@@ -199,7 +198,7 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
               {p.photos
                 .filter((ph) => ph.room === room)
                 .map((ph) => (
-                  <Photo slug={p.slug} file={ph.file} alt={ph.alt} label={ph.room} sizes="(min-width: 960px) 600px, 100vw" />
+                  <Photo slug={p.slug} file={ph.file} alt={ph.alt} sizes="(min-width: 960px) 600px, 100vw" />
                 ))}
             </div>
           </section>

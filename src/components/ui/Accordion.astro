@@ -1,0 +1,72 @@
+---
+// Questions and answers on native <details>. The first item starts open.
+import type { Faq } from '../../data/faq';
+import Text from '../Text.astro';
+
+interface Props {
+  items: Faq[];
+  /** Open the first item. */
+  openFirst?: boolean;
+}
+
+const { items, openFirst = true } = Astro.props;
+---
+
+<div class="accordion">
+  {
+    items.map((item, i) => (
+      <details open={openFirst && i === 0}>
+        <summary>{item.q}</summary>
+        <p>
+          <Text text={item.a} />
+        </p>
+      </details>
+    ))
+  }
+</div>
+
+<style>
+  .accordion {
+    border-top: 1px solid var(--line-strong);
+  }
+  details {
+    border-bottom: 1px solid var(--line);
+  }
+  summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--s2);
+    padding: 18px 0;
+    font-size: var(--t-body);
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--ink);
+    cursor: pointer;
+    list-style: none;
+  }
+  @media (min-width: 900px) {
+    summary {
+      font-size: 1.1875rem;
+    }
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary::after {
+    content: '+';
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-weight: 400;
+    color: var(--forest-soft);
+  }
+  details[open] summary::after {
+    content: '−';
+  }
+  details p {
+    max-width: var(--measure);
+    padding-bottom: 20px;
+    margin: 0;
+    color: var(--text-3);
+  }
+</style>

@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import Faq from '../components/Faq.astro';
+import Accordion from '../components/ui/Accordion.astro';
 import { site } from '../config/site';
 import { faqGroups } from '../data/faq';
 import { faqPage } from '../lib/schema';
@@ -22,7 +22,7 @@ import { faqPage } from '../lib/schema';
       faqGroups.map((g) => (
         <section>
           <h2>{g.title}</h2>
-          <Faq items={g.items} />
+          <Accordion items={g.items} />
         </section>
       ))
     }

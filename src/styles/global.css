@@ -13,11 +13,37 @@
   --error: #9b2c1f;
   --success: #2f6b3a;
 
+  /* Colour, redesign (docs/redesign/BRIEF.md 2.2). No other colours. */
+  --ink: #1d221b; /* body text, footer ground */
+  --text-2: #3d4439; /* intro paragraphs */
+  --text-3: #4a5246; /* secondary text */
+  --line-strong: var(--forest); /* top rule of every schedule */
+  --line-mist: #cfd3c6; /* rules on mist ground */
+  --on-forest: #eef0e8;
+  --on-forest-2: #d5dacd; /* secondary text on forest */
+  --brass-on-forest: #d6c7a2; /* labels on forest */
+  --range: #e4e8dc; /* selected date range fill */
+  --scrim: rgb(29 34 27 / 0.45);
+
   /* Type */
-  --font-sans: 'Manrope Variable', system-ui, sans-serif;
-  --font-serif: 'Newsreader Variable', Georgia, serif;
+  --font-display: 'Redaction', Georgia, serif;
+  --font-worn: 'Redaction 50', 'Redaction', Georgia, serif; /* one phrase per page, see BRIEF.md 2.1 */
+  --font-sans: 'Host Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Fragment Mono', ui-monospace, Menlo, monospace;
+  --font-serif: var(--font-display); /* old name, still used by page styles */
+
+  --t-hero: clamp(3.375rem, 1.6rem + 7.4vw, 8.5rem); /* line-height .9 */
+  --t-h1: clamp(2.5rem, 1.9rem + 2.6vw, 4rem); /* line-height 1 */
+  --t-h2: clamp(2.375rem, 1.9rem + 1.9vw, 3.5rem); /* line-height 1 */
+  --t-h3: clamp(1.75rem, 1.5rem + 1vw, 2.25rem); /* serif, line-height 1.1 */
+  --t-body: 1.0625rem; /* 17px, line-height 1.55 */
+  --t-lead: 1.1875rem; /* 19px, desktop only */
+  --t-small: 0.9375rem; /* 15px */
+  --t-label: 0.8125rem; /* 13px mono uppercase */
+  --t-mono: 0.8125rem; /* 13px schedule keys */
+
   --text-sm: 0.875rem;
-  --text-base: 1.0625rem; /* 17px */
+  --text-base: var(--t-body);
   --text-lg: 1.25rem;
   --text-xl: clamp(1.5rem, 1.2rem + 1vw, 2rem);
   --text-2xl: clamp(2rem, 1.5rem + 2vw, 2.75rem);
@@ -32,19 +58,24 @@
   --s6: 3rem;
   --s8: 4rem;
   --s10: 5rem;
-  --section: 4.5rem; /* 72px mobile */
+  --section: 3rem; /* 48px phone */
 
   /* Layout */
-  --max: 1200px;
-  --gutter: 1.25rem;
-  --radius: 4px;
+  --max: 1280px;
+  --gutter: 20px;
+  --radius: 4px; /* old, being replaced by the radii below */
+  --r-input: 10px;
+  --r-card: 16px; /* the booking card, the only bordered box */
+  --r-sheet: 20px; /* bottom sheet top corners */
+  --r-pill: 999px;
   --header-h: 72px;
+  --measure: 36em; /* body copy max width */
 }
 
-@media (min-width: 768px) {
+@media (min-width: 900px) {
   :root {
-    --section: 7.5rem; /* 120px desktop */
-    --gutter: 2rem;
+    --section: 6rem; /* 96px desktop */
+    --gutter: 40px;
   }
 }
 
@@ -56,6 +87,8 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Host Grotesk is loaded at 400 and 500 only: never fake a bold */
+  font-synthesis-weight: none;
   scroll-padding-top: calc(var(--header-h) + var(--s2));
 }
 
@@ -64,8 +97,8 @@ body {
   background: var(--mist);
   color: var(--forest);
   font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: 1.6;
+  font-size: var(--t-body);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -89,21 +122,45 @@ h4 {
 h1,
 h2,
 .display {
-  font-family: var(--font-serif);
-  letter-spacing: -0.01em;
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1;
 }
 
 h1 {
-  font-size: var(--text-3xl);
+  font-size: var(--t-h1);
 }
 h2 {
-  font-size: var(--text-2xl);
+  font-size: var(--t-h2);
 }
 h3 {
   font-family: var(--font-sans);
   font-size: var(--text-lg);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.3;
+}
+
+/* Serif sub-head. Plain h3 stays sans until each page is redesigned. */
+.h3 {
+  font-family: var(--font-display);
+  font-size: var(--t-h3);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+/* Emphasis in a headline is the italic, never bold */
+h1 em,
+h2 em,
+.h3 em,
+.display em {
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* The worn second line: at most one phrase per page */
+.worn {
+  font-family: var(--font-worn);
+  font-style: normal;
 }
 
 p {
@@ -142,7 +199,8 @@ hr {
   width: 100%;
   max-width: calc(var(--max) + var(--gutter) * 2);
   margin-inline: auto;
-  padding-inline: var(--gutter);
+  padding-left: max(var(--gutter), env(safe-area-inset-left));
+  padding-right: max(var(--gutter), env(safe-area-inset-right));
 }
 
 .narrow {
@@ -192,21 +250,45 @@ hr {
 
 /* Type helpers */
 
-.kicker {
+/* Mono uppercase label. The Label component uses this class. */
+.kicker,
+.label {
   display: block;
-  margin-bottom: var(--s1);
-  font-family: var(--font-sans);
-  line-height: 1.4;
+  margin: 0 0 var(--s1);
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--brass-deep);
 }
+@media (min-width: 900px) {
+  .kicker,
+  .label {
+    font-size: var(--t-label);
+  }
+}
+.label--soft {
+  color: var(--forest-soft);
+}
+.label--on-forest {
+  color: var(--brass-on-forest);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+}
 
 .lead {
-  font-size: var(--text-lg);
-  max-width: 38em;
+  max-width: var(--measure);
+  color: var(--text-2);
+}
+@media (min-width: 900px) {
+  .lead {
+    font-size: var(--t-lead);
+  }
 }
 
 .muted {
@@ -226,39 +308,71 @@ hr {
   white-space: nowrap;
 }
 
-/* Buttons */
+/* Buttons: the Button component uses these classes */
 
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--s1);
-  min-height: 48px;
-  padding: 0 var(--s3);
+  min-height: 44px;
+  padding: 12px 22px;
   border: 1px solid var(--forest);
-  border-radius: var(--radius);
+  border-radius: var(--r-pill);
   background: var(--forest);
-  color: var(--mist);
+  color: var(--paper);
   font: inherit;
-  font-weight: 600;
-  font-size: 0.9375rem;
+  font-weight: 500;
+  font-size: var(--t-small);
+  line-height: 1.2;
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.15s, color 0.15s;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 .button:hover {
-  background: var(--forest-soft);
-  border-color: var(--forest-soft);
-  color: var(--mist);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
 }
 
+/* Secondary: outline in the current text colour, so it works on any ground */
+.button--secondary,
 .button--ghost {
   background: transparent;
-  color: var(--forest);
+  border-color: currentColor;
+  color: inherit;
 }
+.button--secondary:hover,
 .button--ghost:hover {
   background: var(--forest);
-  color: var(--mist);
+  border-color: var(--forest);
+  color: var(--paper);
+}
+
+/* Paper pill for forest grounds */
+.button--paper {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--forest);
+}
+.button--paper:hover {
+  background: var(--mist);
+  border-color: var(--mist);
+  color: var(--ink);
+}
+
+/* Two lines: action over a mono price */
+.button--price {
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 28px;
+}
+.button__sub {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.85;
 }
 
 .button--block {
@@ -266,7 +380,7 @@ hr {
 }
 
 .text-link {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--forest);
 }
 
@@ -308,7 +422,7 @@ hr {
 .field label,
 .field legend {
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 input,
@@ -318,7 +432,7 @@ textarea {
   min-height: 48px;
   padding: 0.625rem 0.875rem;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--r-input);
   background: var(--paper);
   color: var(--forest);
   font: inherit;
@@ -358,7 +472,7 @@ input[type='checkbox'] {
 .rows dd {
   margin: 0;
   text-align: right;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* Placeholder for content still to come. Easy to spot, easy to search for. */
@@ -371,17 +485,7 @@ input[type='checkbox'] {
   color: var(--brass-deep);
 }
 
-/* Motion: images fade in, nothing else */
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-}
-
-.photo img {
-  animation: fade-in 0.6s ease both;
-}
+/* Motion: only the sheet, the sticky bar, focus and hover (BRIEF.md 5) */
 
 @media (prefers-reduced-motion: reduce) {
   *,

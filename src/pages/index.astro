@@ -1,9 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
-import Photo from '../components/Photo.astro';
+import Photo from '../components/ui/Photo.astro';
 import PropertyCard from '../components/PropertyCard.astro';
 import Reviews from '../components/Reviews.astro';
-import Faq from '../components/Faq.astro';
+import Accordion from '../components/ui/Accordion.astro';
 import { booking } from '../config/booking';
 import { site } from '../config/site';
 import { properties } from '../data/properties';
@@ -22,14 +22,12 @@ const areaSlugs = [...new Set(properties.map((p) => p.areaSlug))];
 <Base
   title={site.name}
   description="Book a three-bedroom flat in Stoke Newington direct with the hosts. Lower prices than the booking platforms, no booking fees, for short breaks and work trips."
-  overlayHeader
 >
   <section class="hero">
     <Photo
       slug={featured.slug}
       file={hero?.file}
       alt={hero?.alt ?? ''}
-      label={hero?.room}
       ratio="auto"
       sizes="100vw"
       widths={[800, 1200, 1600, 2400]}
@@ -107,13 +105,13 @@ const areaSlugs = [...new Set(properties.map((p) => p.areaSlug))];
       <h2 class="visually-hidden">Two ways to stay</h2>
       <div class="grid-2">
         <a class="way" href="/stays">
-          <Photo slug={featured.slug} file={living?.file} alt={living?.alt ?? ''} label={living?.room} sizes="(min-width: 768px) 50vw, 100vw" />
+          <Photo slug={featured.slug} file={living?.file} alt={living?.alt ?? ''} sizes="(min-width: 768px) 50vw, 100vw" />
           <h3 class="display way__title">Short stays</h3>
           <p class="muted">Weekends, family visits and breaks of up to {booking.maxInstantNights} nights, booked instantly.</p>
           <span class="text-link">Find dates</span>
         </a>
         <a class="way" href="/work-stays">
-          <Photo slug={featured.slug} file={desk?.file} alt={desk?.alt ?? ''} label={desk?.room} sizes="(min-width: 768px) 50vw, 100vw" />
+          <Photo slug={featured.slug} file={desk?.file} alt={desk?.alt ?? ''} sizes="(min-width: 768px) 50vw, 100vw" />
           <h3 class="display way__title">Work and long stays</h3>
           <p class="muted">The whole flat for teams and placements, from {booking.maxInstantNights + 1} nights to three months.</p>
           <span class="text-link">See work stays</span>
@@ -141,7 +139,7 @@ const areaSlugs = [...new Set(properties.map((p) => p.areaSlug))];
       <div class="hood">
         {
           neighbourhood.map((ph) => (
-            <Photo slug={featured.slug} file={ph.file} alt={ph.alt} label={ph.room} sizes="(min-width: 768px) 33vw, 100vw" />
+            <Photo slug={featured.slug} file={ph.file} alt={ph.alt} sizes="(min-width: 768px) 33vw, 100vw" />
           ))
         }
       </div>
@@ -164,7 +162,7 @@ const areaSlugs = [...new Set(properties.map((p) => p.areaSlug))];
     <div class="container narrow">
       <span class="kicker">Questions</span>
       <h2>Before you book</h2>
-      <Faq items={homeFaqs} />
+      <Accordion items={homeFaqs} />
       <p class="more"><a class="text-link" href="/faq">All questions</a></p>
     </div>
   </section>

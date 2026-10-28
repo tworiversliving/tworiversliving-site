@@ -1,20 +1,19 @@
 ---
 import { nav, site } from '../config/site';
+import { properties } from '../data/properties';
+import { todo } from '../data/todo';
+import Button from './ui/Button.astro';
 
-interface Props {
-  overlay?: boolean;
-}
-
-const { overlay = false } = Astro.props;
 const path = Astro.url.pathname.replace(/\/$/, '');
 const isCurrent = (href: string) => path === href || path.startsWith(`${href}/`);
+// The calendar sheet arrives in redesign Phase 3; until then this goes to the booking panel.
+const checkDates = `/stays/${properties[0].slug}#book`;
 ---
 
-<header class:list={['header', { 'header--overlay': overlay }]} data-header>
+<header class="header">
   <div class="container header__inner">
     <a href="/" class="header__logo" aria-label={`${site.name}, home`}>
-      <img class="logo logo--dark" src="/brand/logo-horizontal.svg" alt="" width="180" height="40" />
-      {overlay && <img class="logo logo--light" src="/brand/logo-horizontal-light.svg" alt="" width="180" height="40" />}
+      <img src="/brand/logo-horizontal.svg" alt="" width="160" height="35" />
     </a>
 
     <nav class="header__nav" aria-label="Main">
@@ -31,60 +30,61 @@ const isCurrent = (href: string) => path === href || path.startsWith(`${href}/`)
       </ul>
     </nav>
 
-    <a href="/stays" class="button header__cta">Book direct</a>
+    <Button href={checkDates} class="header__cta">Check dates</Button>
 
-    <button class="header__toggle" type="button" aria-expanded="false" aria-controls="menu" data-menu-toggle>
-      <span class="header__toggle-label">Menu</span>
+    <button class="round header__toggle" type="button" aria-label="Menu" aria-haspopup="dialog" aria-controls="menu" data-menu-open>
+      <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 7h14M3 13h14" stroke="currentColor" stroke-width="1.5" /></svg>
     </button>
   </div>
 
-  <div class="menu" id="menu" hidden data-menu>
-    <nav class="container" aria-label="Main">
-      <ul>
-        {
-          nav.map((item) => (
-            <li>
-              <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
-                {item.label}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-      <a href="/stays" class="button button--block">Book direct</a>
-      <p class="small muted">
+  <dialog class="menu" id="menu" aria-label="Menu" data-menu>
+    <div class="menu__inner">
+      <div class="menu__top">
+        <a href="/" class="header__logo" aria-label={`${site.name}, home`}>
+          <img src="/brand/logo-horizontal.svg" alt="" width="160" height="35" />
+        </a>
+        <button class="round" type="button" aria-label="Close menu" data-menu-close>
+          <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" /></svg>
+        </button>
+      </div>
+
+      <nav aria-label="Main">
+        <ul>
+          {
+            nav.map((item) => (
+              <li>
+                <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <p class="menu__contact mono">
         <a href={`mailto:${site.email}`}>{site.email}</a>
+        {todo.whatsappHref && <a href={todo.whatsappHref}>WhatsApp {todo.whatsapp}</a>}
       </p>
-    </nav>
-  </div>
+    </div>
+  </dialog>
 </header>
 
 <script>
-  const header = document.querySelector<HTMLElement>('[data-header]');
-  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
-  const menu = document.querySelector<HTMLElement>('[data-menu]');
+  const menu = document.querySelector<HTMLDialogElement>('[data-menu]');
+  const openBtn = document.querySelector<HTMLButtonElement>('[data-menu-open]');
 
-  if (header) {
-    const onScroll = () => header.classList.toggle('is-solid', window.scrollY > 8);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-  }
-
-  if (header && toggle && menu) {
-    const setOpen = (open: boolean) => {
-      toggle.setAttribute('aria-expanded', String(open));
-      toggle.querySelector('span')!.textContent = open ? 'Close' : 'Menu';
-      menu.hidden = !open;
-      header.classList.toggle('is-open', open);
-      document.body.style.overflow = open ? 'hidden' : '';
-    };
-    toggle.addEventListener('click', () => setOpen(menu.hidden));
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !menu.hidden) {
-        setOpen(false);
-        toggle.focus();
-      }
+  if (menu && openBtn) {
+    const root = document.documentElement;
+    openBtn.addEventListener('click', () => {
+      menu.showModal();
+      root.classList.add('menu-open');
     });
+    menu.querySelector('[data-menu-close]')?.addEventListener('click', () => menu.close());
+    // Links to an anchor on the same page should still close the panel
+    menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => menu.close()));
+    menu.addEventListener('close', () => root.classList.remove('menu-open'));
+    matchMedia('(min-width: 1024px)').addEventListener('change', (e) => e.matches && menu.open && menu.close());
   }
 </script>
 
@@ -93,31 +93,24 @@ const isCurrent = (href: string) => path === href || path.startsWith(`${href}/`)
     position: fixed;
     inset: 0 0 auto;
     z-index: 50;
-    background: var(--mist);
+    background: var(--paper);
     border-bottom: 1px solid var(--line);
-    transition: background-color 0.2s, border-color 0.2s;
   }
 
   .header__inner {
     display: flex;
     align-items: center;
-    gap: var(--s3);
+    gap: var(--s4);
     height: var(--header-h);
   }
 
   .header__logo {
-    position: relative;
     flex-shrink: 0;
     margin-right: auto;
   }
-  .logo {
-    width: 160px;
+  .header__logo img {
+    width: 148px;
     height: auto;
-  }
-  .logo--light {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
   }
 
   .header__nav {
@@ -125,46 +118,52 @@ const isCurrent = (href: string) => path === href || path.startsWith(`${href}/`)
   }
   .header__nav ul {
     display: flex;
-    gap: var(--s3);
+    gap: 28px;
     margin: 0;
     padding: 0;
     list-style: none;
   }
   .header__nav a {
-    color: var(--forest);
-    font-size: 0.9375rem;
+    padding-block: 6px;
+    border-bottom: 1px solid transparent;
+    color: var(--ink);
+    font-size: var(--t-small);
     font-weight: 500;
     text-decoration: none;
-    padding-block: var(--s1);
-    border-bottom: 1px solid transparent;
   }
   .header__nav a:hover,
   .header__nav a[aria-current='page'] {
-    border-bottom-color: var(--brass);
+    border-bottom-color: var(--forest);
+    color: var(--ink);
   }
 
-  .header__cta {
+  .header :global(.header__cta) {
     display: none;
-    min-height: 40px;
-    padding-inline: var(--s2);
   }
 
-  .header__toggle {
-    min-height: 44px;
-    padding: 0 var(--s2);
-    border: 1px solid var(--forest);
-    border-radius: var(--radius);
-    background: transparent;
+  .round {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--paper);
     color: var(--forest);
-    font: inherit;
-    font-size: var(--text-sm);
-    font-weight: 600;
     cursor: pointer;
   }
+  .round:hover {
+    border-color: var(--forest);
+  }
 
-  @media (min-width: 960px) {
+  @media (min-width: 1024px) {
+    .header__logo img {
+      width: 160px;
+    }
     .header__nav,
-    .header__cta {
+    .header :global(.header__cta) {
       display: flex;
     }
     .header__toggle {
@@ -172,62 +171,68 @@ const isCurrent = (href: string) => path === href || path.startsWith(`${href}/`)
     }
   }
 
-  /* Over the home hero: transparent with light logo and text, solid once scrolled */
-  .header--overlay:not(.is-solid):not(.is-open) {
-    background: transparent;
-    border-bottom-color: transparent;
+  /* Phone menu: full-screen paper panel */
+  .menu {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--paper);
+    color: var(--ink);
   }
-  .header--overlay:not(.is-solid):not(.is-open) .logo--dark {
-    opacity: 0;
+  .menu::backdrop {
+    background: var(--paper);
   }
-  .header--overlay:not(.is-solid):not(.is-open) .logo--light {
-    opacity: 1;
-  }
-  .header--overlay:not(.is-solid):not(.is-open) .header__nav a,
-  .header--overlay:not(.is-solid):not(.is-open) .header__toggle {
-    color: var(--mist);
-    border-color: var(--mist);
-  }
-  .header--overlay:not(.is-solid):not(.is-open) .header__nav a {
-    border-bottom-color: transparent;
-  }
-  .header--overlay:not(.is-solid):not(.is-open) .header__nav a:hover {
-    border-bottom-color: var(--brass);
-  }
-  .header--overlay:not(.is-solid):not(.is-open) .header__cta {
-    background: var(--mist);
-    border-color: var(--mist);
-    color: var(--forest);
+  :global(html.menu-open) {
+    overflow: hidden;
   }
 
-  /* Mobile menu: full-screen mist panel */
-  .menu {
-    position: fixed;
-    inset: var(--header-h) 0 0;
-    background: var(--mist);
-    overflow-y: auto;
-    padding-block: var(--s4);
+  .menu__inner {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 0 max(var(--gutter), env(safe-area-inset-right)) max(var(--s4), env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
   }
+  .menu__top {
+    display: flex;
+    align-items: center;
+    height: var(--header-h);
+    margin-bottom: var(--s4);
+  }
+
   .menu ul {
-    margin: 0 0 var(--s4);
+    margin: 0;
     padding: 0;
     list-style: none;
+    border-top: 1px solid var(--line-strong);
   }
   .menu li {
     border-bottom: 1px solid var(--line);
   }
   .menu li a {
     display: block;
-    padding: var(--s2) 0;
-    font-family: var(--font-serif);
-    font-size: var(--text-xl);
+    padding-block: 14px;
+    font-family: var(--font-display);
+    font-size: var(--t-h3);
+    line-height: 1.1;
     color: var(--forest);
     text-decoration: none;
   }
   .menu li a[aria-current='page'] {
-    color: var(--brass-deep);
+    font-style: italic;
   }
-  .menu p {
-    margin-top: var(--s3);
+
+  .menu__contact {
+    display: grid;
+    gap: var(--s1);
+    margin: auto 0 0;
+    padding-top: var(--s6);
+  }
+  .menu__contact a {
+    color: var(--forest-soft);
+    text-decoration: none;
   }
 </style>

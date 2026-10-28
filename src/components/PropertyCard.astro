@@ -1,6 +1,6 @@
 ---
 import type { Property } from '../data/properties';
-import Photo from './Photo.astro';
+import Photo from './ui/Photo.astro';
 
 interface Props {
   property: Property;
@@ -13,7 +13,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 <article class="card" data-property={p.slug}>
   <a href={`/stays/${p.slug}`} class="card__link">
-    <Photo slug={p.slug} file={card?.file} alt={card?.alt ?? p.name} label={card?.room} sizes="(min-width: 960px) 580px, 100vw" />
+    <Photo slug={p.slug} file={card?.file} alt={card?.alt ?? p.name} sizes="(min-width: 960px) 580px, 100vw" />
     <div class="card__body">
       <span class="kicker">{p.area}</span>
       <h3 class="card__name">{p.name}</h3>
