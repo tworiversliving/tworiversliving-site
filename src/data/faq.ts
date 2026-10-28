@@ -77,6 +77,7 @@ export const faqGroups: { title: string; items: Faq[] }[] = [
       {
         q: 'Is the flat step-free?',
         a: 'No. The front door is up a flight of stairs and there is no lift.',
+        home: true,
       },
       {
         q: 'Can I bring a pet?',

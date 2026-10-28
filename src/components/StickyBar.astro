@@ -1,0 +1,101 @@
+---
+// Phone-only floating booking pill (BRIEF.md 2.5). Fades in once the element matched by `after`
+// has scrolled out of view. Hidden from 900px, where the header carries "Check dates".
+interface Props {
+  /** Nightly "from" price in pounds. */
+  price: number;
+  href: string;
+  /** Selector for the element the bar waits to scroll past, e.g. the hero. */
+  after: string;
+}
+
+const { price, href, after } = Astro.props;
+---
+
+<tr-sticky-bar class="sticky-bar" data-after={after} inert>
+  <p class="sticky-bar__price">
+    <span class="sticky-bar__from">From</span>
+    <span>£{price} a night</span>
+  </p>
+  <a href={href} class="button button--paper">Check dates</a>
+</tr-sticky-bar>
+
+<script>
+  class StickyBar extends HTMLElement {
+    observer?: IntersectionObserver;
+
+    connectedCallback() {
+      const target = document.querySelector(this.dataset.after ?? '');
+      if (!target) return;
+      this.observer = new IntersectionObserver(([entry]) => {
+        // Shown only once the target is above the viewport, not while it is still below
+        const passed = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+        this.toggleAttribute('data-shown', passed);
+        this.inert = !passed;
+      });
+      this.observer.observe(target);
+    }
+
+    disconnectedCallback() {
+      this.observer?.disconnect();
+    }
+  }
+
+  customElements.define('tr-sticky-bar', StickyBar);
+</script>
+
+<style>
+  .sticky-bar {
+    position: fixed;
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+    padding: 8px 8px 8px 22px;
+    border-radius: var(--r-pill);
+    background: var(--forest);
+    color: var(--on-forest);
+    box-shadow: 0 8px 24px rgb(29 34 27 / 0.22);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s, visibility 0s 0.2s;
+  }
+  .sticky-bar[data-shown] {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .sticky-bar__price {
+    display: grid;
+    margin: 0;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+  .sticky-bar__from {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--brass-on-forest);
+  }
+
+  /* Room at the foot of the footer so the bar never covers it */
+  @media (max-width: 899.98px) {
+    :global(body:has(.sticky-bar) .footer) {
+      padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    }
+  }
+  @media (min-width: 900px) {
+    .sticky-bar {
+      display: none;
+    }
+  }
+</style>
