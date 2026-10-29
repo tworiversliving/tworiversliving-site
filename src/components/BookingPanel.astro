@@ -46,7 +46,7 @@ const { property: p } = Astro.props;
 
 <script>
   import { gbp, plural, postJson } from '../scripts/booking';
-  import { addDays, horizonFrom, isAvailable, isIso, isValidCheckout, loadAvailability, nightsBetween, stay } from '../scripts/dates';
+  import { addDays, horizonFrom, isIso, isValidCheckout, loadAvailability, nightsBetween, stay } from '../scripts/dates';
 
   interface Quote {
     ok: boolean;
@@ -144,9 +144,9 @@ const { property: p } = Astro.props;
       const g = qs.get('guests');
       const patch: Parameters<typeof stay.set>[0] = {};
       if (g && guestsEl.querySelector(`option[value="${g}"]`)) patch.guests = Number(g);
-      if (isIso(ci) && isAvailable(av, ci, today)) {
+      if (isIso(ci) && ci >= today) {
         patch.checkIn = ci;
-        patch.checkOut = isIso(co) && isValidCheckout(av, ci, co, horizonFrom(today)) ? co : null;
+        patch.checkOut = isIso(co) && isValidCheckout(av, ci, co, horizonFrom(today), maxInstant) ? co : null;
       }
       stay.set(patch);
     });

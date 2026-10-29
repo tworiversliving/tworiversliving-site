@@ -16,6 +16,8 @@ export interface OpenOptions {
   checkOut?: string | null;
   apply?: (checkIn: string, checkOut: string) => void;
   labels?: [string, string];
+  /** false: a plain calendar with no availability or prices (long stay enquiry). */
+  live?: boolean;
 }
 
 interface Quote {
@@ -78,9 +80,14 @@ function openSheet(ci: string | null, co: string | null) {
   s.style.transform = '';
   s.showModal();
   document.documentElement.classList.add('sheet-open');
-  setStatus('Loading available dates.');
   cal.setup(null, ci, co);
   sheetChanged(ci, co);
+  if (current!.live === false) {
+    setStatus('');
+    cal.focusDay();
+    return;
+  }
+  setStatus('Loading available dates.');
   loadAvailability(slug).then((av) => {
     if (!s.open) return;
     setStatus(av ? '' : "We couldn't load prices just now. You can still choose your dates.");
@@ -249,6 +256,10 @@ function openPop(anchor: HTMLElement, ci: string | null, co: string | null) {
   p.hidden = false;
   anchor.setAttribute('aria-expanded', 'true');
   cal.setup(null, ci, co);
+  if (current?.live === false) {
+    cal.focusDay();
+    return;
+  }
   loadAvailability(slug).then((av) => {
     if (p.hidden) return;
     cal.setup(av, ci, co);

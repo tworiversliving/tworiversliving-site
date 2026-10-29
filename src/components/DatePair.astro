@@ -9,14 +9,16 @@ interface Props {
   names?: [string, string];
   /** Which edge the desktop popover lines up with. */
   align?: 'start' | 'end';
+  /** false: don't show PMS availability or prices (long stay enquiry, quoted by hand). */
+  live?: boolean;
   class?: string;
 }
 
 const isoPattern = String.raw`\d{4}-\d{2}-\d{2}`;
-const { context, labels = ['Check-in', 'Checkout'], names, align = 'start', class: className } = Astro.props;
+const { context, labels = ['Check-in', 'Checkout'], names, align = 'start', live = true, class: className } = Astro.props;
 ---
 
-<tr-date-pair class:list={['pair', className]} data-context={context} data-align={align} aria-expanded="false">
+<tr-date-pair class:list={['pair', className]} data-context={context} data-align={align} data-live={String(live)} aria-expanded="false">
   <button type="button" class="pair__cell" data-pair-in>
     <span class="pair__label">{labels[0]}</span>
     <span class="pair__value" data-pair-in-value>Add date</span>
@@ -65,7 +67,7 @@ const { context, labels = ['Check-in', 'Checkout'], names, align = 'start', clas
           const labels = [...this.querySelectorAll('.pair__label')].map((l) => l.textContent ?? '') as [string, string];
           openDates(
             field
-              ? { context: 'field', anchor: this, checkIn: this.checkIn, checkOut: this.checkOut, labels, apply: (ci, co) => this.setDates(ci, co) }
+              ? { context: 'field', anchor: this, checkIn: this.checkIn, checkOut: this.checkOut, labels, live: this.dataset.live !== 'false', apply: (ci, co) => this.setDates(ci, co) }
               : { context: 'book', anchor: this },
           );
         });

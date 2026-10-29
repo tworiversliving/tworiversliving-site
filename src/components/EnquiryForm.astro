@@ -48,7 +48,7 @@ const maxGuests = Math.max(...properties.map((p) => p.guests));
       <>
         <fieldset class="field dates">
           <legend>Your dates</legend>
-          <DatePair context="field" labels={['Arriving', 'Leaving']} names={['checkIn', 'checkOut']} />
+          <DatePair context="field" labels={['Arriving', 'Leaving']} names={['checkIn', 'checkOut']} live={false} />
         </fieldset>
         <p class="small muted hint">
           Stays from {booking.maxInstantNights + 1} to {booking.maxNights} nights. For three months or more, get in touch first.

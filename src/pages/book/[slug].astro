@@ -21,7 +21,7 @@ const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
 ---
 
 <Base title="Book your stay" description={`Book ${p.name} direct.`} noindex>
-  <div class="container book" data-book data-slug={p.slug} data-checkin-time={booking.checkInTime} data-cancel-days={booking.freeCancellationDays}>
+  <div class="container book" data-book data-slug={p.slug} data-checkin-time={booking.checkInTime} data-cancel-days={booking.freeCancellationDays} data-max-instant={booking.maxInstantNights}>
     <div class="steps">
       <a class="small text-link back" href={`/stays/${p.slug}#book`} data-back>Back to the flat</a>
       <h1 data-title>Confirm and pay</h1>
@@ -195,6 +195,12 @@ const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
   const chosenExtras = () => extraBoxes.filter((b) => b.checked).map((b) => b.value);
 
   async function requote() {
+    // Long stays are quoted by hand, without the PMS calendar: straight to the enquiry
+    const nights = Math.round((Date.parse(checkOut) - Date.parse(checkIn)) / 86_400_000);
+    if (nights > Number(root.dataset.maxInstant)) {
+      location.href = `/work-stays?${backParams}#quote`;
+      return;
+    }
     const q = await postJson<Quote>('/api/quote', { slug, checkIn, checkOut, guests, extras: chosenExtras() });
     if (!q.ok) return problem(q.errors?.[0] ?? q.error ?? 'Those dates are no longer available.');
     if (q.mode === 'enquire') {

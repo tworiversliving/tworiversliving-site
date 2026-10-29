@@ -61,8 +61,15 @@ export function checkoutLimit(av: Availability | null, checkIn: string, horizon:
 export const minStayFor = (av: Availability | null, checkIn: string) => (av ? (av.days.get(checkIn)?.minStay ?? 1) : 1);
 export const isAvailable = (av: Availability | null, date: string, today: string) => date >= today && (av ? !!av.days.get(date)?.available : true);
 
-export function isValidCheckout(av: Availability | null, checkIn: string, d: string, horizon: string) {
-  return d > checkIn && nightsBetween(checkIn, d) >= minStayFor(av, checkIn) && d <= checkoutLimit(av, checkIn, horizon);
+/**
+ * Short stays (up to `maxInstant` nights) must fit free nights in the PMS calendar. Longer stays are quoted
+ * by hand, so they ignore the PMS calendar: any checkout after that works and the hosts check the dates.
+ */
+export function isValidCheckout(av: Availability | null, checkIn: string, d: string, horizon: string, maxInstant: number) {
+  if (d <= checkIn || d > horizon) return false;
+  if (nightsBetween(checkIn, d) > maxInstant) return true;
+  const firstFree = av ? !!av.days.get(checkIn)?.available : true;
+  return firstFree && nightsBetween(checkIn, d) >= minStayFor(av, checkIn) && d <= checkoutLimit(av, checkIn, horizon);
 }
 
 /** Last day the calendar shows. Checkout days are really limited by the availability feed, which ends a year ahead. */

@@ -1,7 +1,7 @@
 // <tr-calendar>: month grid for choosing a stay (BRIEF.md 4.3). No framework.
 // First pick sets check-in, a later valid day sets checkout, a day on or before check-in starts again.
 // Fires `change` with { checkIn, checkOut } after every pick. Arrow keys move between days, Enter picks.
-import { addDays, addMonths, horizonFrom, isAvailable, isValidCheckout, minStayFor, monthStart, type Availability } from './dates';
+import { addDays, addMonths, horizonFrom, isAvailable, isValidCheckout, minStayFor, monthStart, nightsBetween, type Availability } from './dates';
 
 const MONTH = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const LONG = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -19,6 +19,10 @@ export class TrCalendar extends HTMLElement {
   private body?: HTMLElement;
   private hint?: HTMLElement;
 
+  /** Longest stay that is booked against the PMS calendar; longer stays are quoted and ignore it. */
+  get maxInstant() {
+    return Number(this.getAttribute('max-instant') ?? 14);
+  }
   get months() {
     return this.getAttribute('months') === '2' ? 2 : 1;
   }
@@ -76,11 +80,18 @@ export class TrCalendar extends HTMLElement {
     return this.today;
   }
 
+  /** Any day in the window can start a stay: a booked night still works for a long stay, which is quoted. */
   private canCheckIn(d: string) {
-    return d <= this.lastCheckIn && isAvailable(this.availability, d, this.today);
+    return d >= this.today && d <= this.lastCheckIn;
+  }
+  private isFree(d: string) {
+    return isAvailable(this.availability, d, this.today);
   }
   private canCheckOut(d: string) {
-    return !!this.checkIn && !this.checkOut && isValidCheckout(this.availability, this.checkIn, d, this.horizon);
+    return !!this.checkIn && !this.checkOut && isValidCheckout(this.availability, this.checkIn, d, this.horizon, this.maxInstant);
+  }
+  private get isLongStay() {
+    return !!this.checkIn && !!this.checkOut && nightsBetween(this.checkIn, this.checkOut) > this.maxInstant;
   }
 
   private pick(d: string) {
@@ -137,6 +148,7 @@ export class TrCalendar extends HTMLElement {
 
     const choosingOut = !!this.checkIn && !this.checkOut;
     const minEnd = this.checkIn ? addDays(this.checkIn, minStayFor(this.availability, this.checkIn)) : '';
+    const longStay = this.isLongStay;
     const months: string[] = [];
     for (let m = 0; m < this.months; m++) {
       const start = addMonths(this.view, m);
@@ -151,11 +163,15 @@ export class TrCalendar extends HTMLElement {
         const selectable = asOut || (asIn && !tooShort);
         const edge = d === this.checkIn || d === this.checkOut;
         const inRange = !!this.checkIn && !!this.checkOut && d > this.checkIn && d < this.checkOut;
-        const cls = ['cal__day', edge && 'is-edge', inRange && 'is-range', !asIn && !asOut && 'is-off', tooShort && 'is-short', d === this.today && 'is-today']
+        // Booked nights stay marked, except inside a long stay (quoted, so the PMS calendar doesn't apply)
+        const free = this.isFree(d);
+        const off = !free && !asOut && !(longStay && (inRange || edge));
+        const cls = ['cal__day', edge && 'is-edge', inRange && 'is-range', off && 'is-off', tooShort && 'is-short', d === this.today && 'is-today']
           .filter(Boolean)
           .join(' ');
-        const status = d === this.checkIn ? ', check-in' : d === this.checkOut ? ', checkout' : !selectable ? ', not available' : asOut && !asIn ? ', checkout only' : '';
-        const showPrice = asIn && info?.price != null;
+        const status =
+          d === this.checkIn ? ', check-in' : d === this.checkOut ? ', checkout' : !selectable ? ', not available' : off ? `, booked for stays up to ${this.maxInstant} nights` : '';
+        const showPrice = free && !longStay && info?.price != null;
         cells.push(
           `<button type="button" class="${cls}" data-date="${d}" tabindex="${d === this.focusDate ? 0 : -1}"${selectable ? '' : ' aria-disabled="true"'} aria-pressed="${edge}" aria-label="${LONG.format(parse(d))}${status}${showPrice ? `, ${price(info!.price!)} a night` : ''}"><span class="cal__n">${Number(d.slice(8))}</span><span class="cal__p" aria-hidden="true">${showPrice ? price(info!.price!) : ''}</span></button>`,
         );
@@ -182,7 +198,10 @@ export class TrCalendar extends HTMLElement {
       if (!this.checkIn) this.hint.textContent = 'Choose your check-in date.';
       else if (!this.checkOut) {
         const min = minStayFor(this.availability, this.checkIn);
-        this.hint.textContent = `Now choose your checkout date.${min > 1 ? ` Minimum stay ${min} nights.` : ''}`;
+        const long = `Stays over ${this.maxInstant} nights can be any dates; we'll send a quote.`;
+        this.hint.textContent = this.isFree(this.checkIn)
+          ? `Now choose your checkout date.${min > 1 ? ` Minimum stay ${min} nights.` : ''} ${long}`
+          : `That night is booked for short stays. ${long}`;
       } else this.hint.textContent = 'Choose a new check-in date to start again.';
     }
   }

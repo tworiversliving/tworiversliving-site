@@ -36,7 +36,7 @@ const time = (t: string) => {
       <div><dt class="mono" data-label-out>Checkout</dt><dd data-value-out>Add date</dd></div>
     </dl>
     <p class="sheet__status" data-status role="status" hidden></p>
-    <tr-calendar months="1"></tr-calendar>
+    <tr-calendar months="1" max-instant={booking.maxInstantNights}></tr-calendar>
 
     <div class="sheet__guests" data-guests-row>
       <span id="sheet-guests">Guests</span>
@@ -60,7 +60,7 @@ const time = (t: string) => {
 </dialog>
 
 <div class="date-pop" data-date-pop role="dialog" aria-label="Choose dates" hidden>
-  <tr-calendar months="2"></tr-calendar>
+  <tr-calendar months="2" max-instant={booking.maxInstantNights}></tr-calendar>
   <button type="button" class="date-pop__close text-link" data-pop-close>Close</button>
 </div>
 
@@ -169,6 +169,8 @@ const time = (t: string) => {
   }
   .cal__day.is-off {
     opacity: 0.4;
+  }
+  .cal__day[aria-disabled] {
     cursor: default;
   }
   .cal__day.is-off .cal__n {
