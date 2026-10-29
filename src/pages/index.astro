@@ -15,7 +15,7 @@ import { todo } from '../data/todo';
 
 const flat = properties[0];
 const flatHref = `/stays/${flat.slug}`;
-// The date sheet arrives in redesign Phase 3; until then "Check dates" goes to the booking panel.
+// "Check dates" opens the date sheet; without JavaScript it goes to the booking card.
 const checkDates = `${flatHref}#book`;
 const price = flat.fromPriceFallback;
 
@@ -86,7 +86,7 @@ const distances = [
               { key: 'Rated', value: ratingLine(flat) },
             ]}
           />
-          <Button href={checkDates} variant="price" sub={`from £${price} a night`} class="hero__cta">Check dates</Button>
+          <Button href={checkDates} variant="price" sub={`from £${price} a night`} class="hero__cta" data-open-dates>Check dates</Button>
         </div>
       </div>
     </section>
@@ -123,7 +123,7 @@ const distances = [
             <h3 class="h3">Short stays</h3>
             <p>Weekends, family visits and breaks of up to {booking.maxInstantNights} nights, booked instantly.</p>
             <p class="mono ways__fact">From £{price} a night</p>
-            <Button href={checkDates} variant="paper">Check dates</Button>
+            <Button href={checkDates} variant="paper" data-open-dates>Check dates</Button>
           </div>
           <div class="ways__col">
             <Label tone="on-forest">{booking.maxInstantNights + 1} nights or more · Enquire</Label>

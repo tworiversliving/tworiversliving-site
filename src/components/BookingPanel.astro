@@ -1,9 +1,10 @@
 ---
-// Calendar, guests and live price for a property. Reserve goes to /book/<slug>; stays over the
-// instant-booking limit go to the long stay enquiry with the dates carried across.
+// Dates, guests and live price for a property. The dates open the shared picker (DateSheet.astro).
+// Reserve goes to /book/<slug>; stays over the instant-booking limit go to the long stay enquiry with the dates carried across.
 import { booking } from '../config/booking';
 import { site } from '../config/site';
 import type { Property } from '../data/properties';
+import DatePair from './DatePair.astro';
 
 interface Props {
   property: Property;
@@ -12,28 +13,12 @@ interface Props {
 const { property: p } = Astro.props;
 ---
 
-<aside class="panel" id="book" aria-label="Book this flat" data-panel data-slug={p.slug} data-max-instant={booking.maxInstantNights}>
+<aside class="panel" id="book" aria-label="Book this flat" data-panel data-slug={p.slug} data-max-instant={booking.maxInstantNights} data-max-nights={booking.maxNights}>
   <p class="panel__price">From <strong data-from-price>£{p.fromPriceFallback}</strong> a night</p>
 
-  <div class="cal" data-cal hidden>
-    <div class="cal__head">
-      <button type="button" class="cal__nav" data-prev aria-label="Previous month">‹</button>
-      <p class="cal__month" data-month aria-live="polite"></p>
-      <button type="button" class="cal__nav" data-next aria-label="Next month">›</button>
-    </div>
-    <div class="cal__dow" aria-hidden="true"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
-    <div class="cal__grid" data-grid role="group" aria-label="Choose dates"></div>
-    <p class="small muted cal__hint" data-hint aria-live="polite">Choose your check-in date.</p>
-  </div>
+  <DatePair context="book" align="end" class="panel__dates" />
 
-  <p class="small muted" data-loading>Loading available dates.</p>
-
-  <div class="picked" data-picked hidden>
-    <div><span class="small muted">Check-in</span><strong data-in>Add date</strong></div>
-    <div><span class="small muted">Checkout</span><strong data-out>Add date</strong></div>
-  </div>
-
-  <div class="field guests" data-guests-field hidden>
+  <div class="field guests">
     <label for="guests">Guests</label>
     <select id="guests" data-guests>
       {Array.from({ length: p.guests }, (_, i) => <option value={i + 1} selected={i + 1 === 2}>{i + 1}</option>)}
@@ -43,8 +28,8 @@ const { property: p } = Astro.props;
   <dl class="breakdown" data-breakdown hidden></dl>
   <p class="error small" data-error role="alert" hidden></p>
 
-  <button type="button" class="button button--block" data-reserve hidden disabled>Reserve</button>
-  <p class="small muted panel__note" data-under hidden>You won't be charged until the next step.</p>
+  <button type="button" class="button button--block" data-reserve disabled>Reserve</button>
+  <p class="small muted panel__note" data-under>You won't be charged until the next step.</p>
 
   <div data-fallback hidden>
     <p class="small muted">We couldn't load the calendar just now. Email us your dates and we'll confirm the price.</p>
@@ -55,19 +40,14 @@ const { property: p } = Astro.props;
   </noscript>
 
   <p class="small muted panel__note">
-    Staying {booking.maxInstantNights + 1} nights or more? <a href="/work-stays#quote">Ask about long stays</a>.
+    Staying {booking.maxInstantNights + 1} nights or more? <a href="/work-stays#quote">Ask for a quote</a>.
   </p>
 </aside>
 
 <script>
-  import { gbp, fmtDate, plural, postJson } from '../scripts/booking';
+  import { gbp, plural, postJson } from '../scripts/booking';
+  import { addDays, horizonFrom, isAvailable, isIso, isValidCheckout, loadAvailability, nightsBetween, stay } from '../scripts/dates';
 
-  interface Day {
-    date: string;
-    available: boolean;
-    price: number | null;
-    minStay: number;
-  }
   interface Quote {
     ok: boolean;
     mode: 'instant' | 'enquire' | null;
@@ -86,177 +66,90 @@ const { property: p } = Astro.props;
     const $ = <T extends HTMLElement>(sel: string) => panel.querySelector<T>(sel)!;
     const slug = panel.dataset.slug!;
     const maxInstant = Number(panel.dataset.maxInstant);
-    const grid = $('[data-grid]');
-    const monthLabel = $('[data-month]');
-    const hint = $('[data-hint]');
+    const maxNights = Number(panel.dataset.maxNights);
     const guestsEl = $<HTMLSelectElement>('[data-guests]');
     const breakdown = $('[data-breakdown]');
     const errorEl = $('[data-error]');
     const reserve = $<HTMLButtonElement>('[data-reserve]');
     const under = $('[data-under]');
-
-    const days = new Map<string, Day>();
-    let today = '';
-    let maxNights = 89;
-    let month = '';
-    let checkIn: string | null = null;
-    let checkOut: string | null = null;
     let quoteSeq = 0;
     let target = '';
 
-    const addDays = (iso: string, n: number) => {
-      const d = new Date(`${iso}T00:00:00Z`);
-      d.setUTCDate(d.getUTCDate() + n);
-      return d.toISOString().slice(0, 10);
-    };
-    const nights = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
-    const addMonths = (m: string, n: number) => {
-      const d = new Date(`${m}T00:00:00Z`);
-      d.setUTCMonth(d.getUTCMonth() + n, 1);
-      return d.toISOString().slice(0, 10);
-    };
-    const monthName = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-    const longName = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
-
-    /** Last date a stay starting `ci` can check out: the first taken night after it, within the limits. */
-    function checkoutLimit(ci: string) {
-      let d = addDays(ci, 1);
-      const cap = addDays(ci, maxNights);
-      while (d < cap && days.get(d)?.available) d = addDays(d, 1);
-      return d;
-    }
-    const isValidCheckout = (d: string) => {
-      if (!checkIn || d <= checkIn) return false;
-      const minStay = days.get(checkIn)?.minStay ?? 1;
-      return nights(checkIn, d) >= minStay && d <= checkoutLimit(checkIn);
-    };
-
-    function render() {
-      const lastMonth = addMonths(today.slice(0, 8) + '01', 12);
-      $<HTMLButtonElement>('[data-prev]').disabled = month <= today.slice(0, 8) + '01';
-      $<HTMLButtonElement>('[data-next]').disabled = month >= lastMonth;
-      monthLabel.textContent = monthName.format(new Date(`${month}T00:00:00Z`));
-
-      const first = new Date(`${month}T00:00:00Z`);
-      const lead = (first.getUTCDay() + 6) % 7; // Monday first
-      const cells: string[] = Array.from({ length: lead }, () => '<span></span>');
-      const choosingOut = !!checkIn && !checkOut;
-      for (let d = month; d.slice(0, 7) === month.slice(0, 7); d = addDays(d, 1)) {
-        const info = days.get(d);
-        const available = !!info?.available;
-        const validOut = choosingOut && isValidCheckout(d);
-        const enabled = validOut || available;
-        const inRange = checkIn && checkOut && d > checkIn && d < checkOut;
-        const cls = [
-          'day',
-          !available && !validOut ? 'day--off' : '',
-          validOut && !available ? 'day--out-only' : '',
-          d === checkIn || d === checkOut ? 'day--picked' : '',
-          inRange ? 'day--range' : '',
-        ].filter(Boolean).join(' ');
-        const status = d === checkIn ? ', check-in' : d === checkOut ? ', checkout' : !enabled ? ', unavailable' : validOut && !available ? ', checkout only' : '';
-        cells.push(
-          `<button type="button" class="${cls}" data-date="${d}" ${enabled ? '' : 'disabled'} aria-pressed="${d === checkIn || d === checkOut}" aria-label="${longName.format(new Date(`${d}T00:00:00Z`))}${status}">${Number(d.slice(8))}</button>`,
-        );
+    // The card, the date sheet and the popover share one stay
+    stay.set({ guests: Number(guestsEl.value) });
+    guestsEl.addEventListener('change', () => stay.set({ guests: Number(guestsEl.value) }));
+    let last = '';
+    stay.subscribe((s) => {
+      if (guestsEl.value !== String(s.guests)) guestsEl.value = String(s.guests);
+      const key = `${s.checkIn}|${s.checkOut}|${s.guests}`;
+      if (key !== last) {
+        last = key;
+        update();
       }
-      grid.innerHTML = cells.join('');
-
-      if (!checkIn) hint.textContent = 'Choose your check-in date.';
-      else if (!checkOut) {
-        const min = days.get(checkIn)?.minStay ?? 1;
-        hint.textContent = `Now choose your checkout date.${min > 1 ? ` Minimum stay ${min} nights.` : ''}`;
-      } else hint.textContent = '';
-      $('[data-in]').textContent = checkIn ? fmtDate(checkIn) : 'Add date';
-      $('[data-out]').textContent = checkOut ? fmtDate(checkOut) : 'Add date';
-    }
-
-    grid.addEventListener('click', (e) => {
-      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-date]');
-      if (!btn || btn.disabled) return;
-      const d = btn.dataset.date!;
-      if (checkIn && !checkOut && isValidCheckout(d)) checkOut = d;
-      else {
-        checkIn = d;
-        checkOut = null;
-      }
-      render();
-      grid.querySelector<HTMLButtonElement>(`[data-date="${d}"]`)?.focus();
-      update();
     });
-    $('[data-prev]').addEventListener('click', () => ((month = addMonths(month, -1)), render()));
-    $('[data-next]').addEventListener('click', () => ((month = addMonths(month, 1)), render()));
-    guestsEl.addEventListener('change', update);
+
+    function fail(text: string) {
+      errorEl.textContent = text;
+      errorEl.hidden = false;
+    }
 
     async function update() {
+      const { checkIn, checkOut, guests } = stay.get();
       errorEl.hidden = true;
       breakdown.hidden = true;
       reserve.disabled = true;
-      if (!checkIn || !checkOut) {
-        reserve.textContent = 'Reserve';
-        return;
-      }
-      const params = new URLSearchParams({ checkIn, checkOut, guests: guestsEl.value });
-      history.replaceState(null, '', `${location.pathname}?${params}${location.hash}`);
-      const n = nights(checkIn, checkOut);
+      reserve.textContent = 'Reserve';
+      under.textContent = "You won't be charged until the next step.";
       const seq = ++quoteSeq;
-      const q = await postJson<Quote>('/api/quote', { slug, checkIn, checkOut, guests: Number(guestsEl.value) });
-      if (seq !== quoteSeq) return;
-      if (!q.ok) {
-        errorEl.textContent = q.errors?.[0] ?? q.error ?? 'Those dates are not available.';
-        errorEl.hidden = false;
+      if (!checkIn || !checkOut) return;
+      const params = new URLSearchParams({ checkIn, checkOut, guests: String(guests) });
+      history.replaceState(null, '', `${location.pathname}?${params}${location.hash}`);
+      const n = nightsBetween(checkIn, checkOut);
+      if (n > maxNights) return fail(`We can't take stays over ${maxNights} nights.`);
+      if (n > maxInstant) {
+        reserve.textContent = 'Ask for a quote';
+        under.textContent = `Stays over ${maxInstant} nights are quoted for the whole flat.`;
+        target = `/work-stays?${params}#quote`;
+        reserve.disabled = false;
         return;
       }
+      const q = await postJson<Quote>('/api/quote', { slug, checkIn, checkOut, guests });
+      if (seq !== quoteSeq) return;
+      if (!q.ok) return fail(q.errors?.[0] ?? q.error ?? 'Those dates are not available.');
       breakdown.innerHTML = [
         `<div><dt>${plural(n, 'night')}</dt><dd>${gbp(q.subtotal)}</dd></div>`,
         q.discount ? `<div><dt>Direct booking discount (${Math.round(q.discountRate * 100)}%)</dt><dd>−${gbp(q.discount)}</dd></div>` : '',
         `<div class="breakdown__total"><dt>Total</dt><dd>${gbp(q.stay)}</dd></div>`,
       ].join('');
       breakdown.hidden = false;
-      if (q.mode === 'enquire') {
-        reserve.textContent = 'Enquire about this stay';
-        under.textContent = `Stays over ${maxInstant} nights are booked by enquiry. We'll reply with a quote.`;
-        target = `/work-stays?${params}#quote`;
-      } else {
-        reserve.textContent = 'Reserve';
-        under.textContent = "You won't be charged until the next step.";
-        target = `/book/${slug}?${params}`;
-      }
+      target = `/book/${slug}?${params}`;
       reserve.disabled = false;
     }
     reserve.addEventListener('click', () => target && (location.href = target));
 
-    fetch(`/api/availability?slug=${encodeURIComponent(slug)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((data: { today: string; maxNights: number; days: Day[] }) => {
-        today = data.today;
-        maxNights = data.maxNights;
-        for (const d of data.days) days.set(d.date, d);
-
-        // "From" price: the lowest direct rate over the next 60 days.
-        const soon = data.days.filter((d) => d.available && d.price != null && d.date < addDays(today, 60)).map((d) => d.price!);
-        if (soon.length) document.querySelectorAll('[data-from-price]').forEach((el) => (el.textContent = gbp(Math.min(...soon))));
-
-        // Dates carried back from the checkout page or a shared link.
-        const qs = new URLSearchParams(location.search);
-        const ci = qs.get('checkIn');
-        const co = qs.get('checkOut');
-        const g = qs.get('guests');
-        if (g && guestsEl.querySelector(`option[value="${g}"]`)) guestsEl.value = g;
-        if (ci && days.get(ci)?.available) {
-          checkIn = ci;
-          if (co && isValidCheckout(co)) checkOut = co;
-        }
-        month = (checkIn ?? today).slice(0, 8) + '01';
-
-        for (const sel of ['[data-cal]', '[data-picked]', '[data-guests-field]', '[data-reserve]', '[data-under]']) $(sel).hidden = false;
-        $('[data-loading]').hidden = true;
-        render();
-        update();
-      })
-      .catch(() => {
-        $('[data-loading]').hidden = true;
+    loadAvailability(slug).then((av) => {
+      if (!av) {
         $('[data-fallback]').hidden = false;
-      });
+        return;
+      }
+      const today = av.today;
+      // "From" price: the lowest direct rate over the next 60 days.
+      const soon = [...av.days.values()].filter((d) => d.available && d.price != null && d.date < addDays(today, 60)).map((d) => d.price!);
+      if (soon.length) document.querySelectorAll('[data-from-price]').forEach((el) => (el.textContent = gbp(Math.min(...soon))));
+
+      // Dates carried back from the checkout page or a shared link.
+      const qs = new URLSearchParams(location.search);
+      const ci = qs.get('checkIn');
+      const co = qs.get('checkOut');
+      const g = qs.get('guests');
+      const patch: Parameters<typeof stay.set>[0] = {};
+      if (g && guestsEl.querySelector(`option[value="${g}"]`)) patch.guests = Number(g);
+      if (isIso(ci) && isAvailable(av, ci, today)) {
+        patch.checkIn = ci;
+        patch.checkOut = isIso(co) && isValidCheckout(av, ci, co, horizonFrom(today)) ? co : null;
+      }
+      stay.set(patch);
+    });
   }
 </script>
 
@@ -281,99 +174,8 @@ const { property: p } = Astro.props;
     margin: var(--s2) 0 0;
   }
 
-  .cal__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--s1);
-  }
-  .cal__month {
-    margin: 0;
-    font-weight: 600;
-  }
-  .cal__nav {
-    width: 40px;
-    height: 40px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: transparent;
-    color: var(--forest);
-    font-size: 1.25rem;
-    cursor: pointer;
-  }
-  .cal__nav:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
-  .cal__dow,
-  .cal__grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
-    text-align: center;
-  }
-  .cal__dow {
-    font-size: 0.75rem;
-    color: var(--forest-soft);
-    margin-bottom: 4px;
-  }
-  .cal__grid :global(.day) {
-    aspect-ratio: 1;
-    min-height: 40px;
-    border: 0;
-    border-radius: var(--radius);
-    background: transparent;
-    color: var(--forest);
-    font: inherit;
-    font-size: var(--text-sm);
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .cal__grid :global(.day:hover:not(:disabled)) {
-    outline: 1px solid var(--forest);
-  }
-  .cal__grid :global(.day:focus-visible) {
-    outline: 2px solid var(--brass);
-  }
-  .cal__grid :global(.day--off) {
-    color: var(--forest-soft);
-    opacity: 0.45;
-    text-decoration: line-through;
-    font-weight: 400;
-    cursor: default;
-  }
-  .cal__grid :global(.day--out-only) {
-    color: var(--forest-soft);
-    font-weight: 400;
-  }
-  .cal__grid :global(.day--range) {
-    background: var(--mist);
-  }
-  .cal__grid :global(.day--picked) {
-    background: var(--forest);
-    color: var(--mist);
-  }
-  .cal__hint {
-    min-height: 1.5em;
-    margin: var(--s1) 0 0;
-  }
-
-  .picked {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .panel__dates {
     margin: var(--s2) 0;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-  .picked div {
-    display: grid;
-    padding: var(--s1) var(--s2);
-  }
-  .picked div + div {
-    border-left: 1px solid var(--line);
-  }
-  .picked strong {
-    font-size: var(--text-sm);
   }
 
   .guests {

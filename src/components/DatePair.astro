@@ -1,0 +1,154 @@
+---
+// Check-in / checkout pair that opens the date picker. Replaces native date inputs (BRIEF.md 4.3).
+//   context="book":  shows the stay chosen on this page (booking card).
+//   context="field": a form field. Hidden inputs carry the dates; without JavaScript plain text inputs do.
+interface Props {
+  context: 'book' | 'field';
+  labels?: [string, string];
+  /** Field context: input names, e.g. ['checkIn', 'checkOut']. */
+  names?: [string, string];
+  /** Which edge the desktop popover lines up with. */
+  align?: 'start' | 'end';
+  class?: string;
+}
+
+const isoPattern = String.raw`\d{4}-\d{2}-\d{2}`;
+const { context, labels = ['Check-in', 'Checkout'], names, align = 'start', class: className } = Astro.props;
+---
+
+<tr-date-pair class:list={['pair', className]} data-context={context} data-align={align} aria-expanded="false">
+  <button type="button" class="pair__cell" data-pair-in>
+    <span class="pair__label">{labels[0]}</span>
+    <span class="pair__value" data-pair-in-value>Add date</span>
+  </button>
+  <button type="button" class="pair__cell" data-pair-out>
+    <span class="pair__label">{labels[1]}</span>
+    <span class="pair__value" data-pair-out-value>Add date</span>
+  </button>
+  {
+    names && (
+      <>
+        <input type="hidden" name={names[0]} data-pair-in-input disabled />
+        <input type="hidden" name={names[1]} data-pair-out-input disabled />
+        <noscript>
+          <style set:html="tr-date-pair .pair__cell{display:none}" />
+          <label class="pair__nojs">
+            {labels[0]} (YYYY-MM-DD)
+            <input name={names[0]} inputmode="numeric" pattern={isoPattern} placeholder="2026-11-20" />
+          </label>
+          <label class="pair__nojs">
+            {labels[1]} (YYYY-MM-DD)
+            <input name={names[1]} inputmode="numeric" pattern={isoPattern} placeholder="2026-12-10" />
+          </label>
+        </noscript>
+      </>
+    )
+  }
+</tr-date-pair>
+
+<script>
+  import { closeDates, openDates, popOpenOn } from '../scripts/date-picker';
+  import { fmtShort, isIso, stay } from '../scripts/dates';
+
+  class TrDatePair extends HTMLElement {
+    checkIn: string | null = null;
+    checkOut: string | null = null;
+    private unsub?: () => void;
+
+    connectedCallback() {
+      const field = this.dataset.context === 'field';
+      // JavaScript is on: the hidden inputs carry the dates
+      this.querySelectorAll<HTMLInputElement>('input[type="hidden"]').forEach((i) => (i.disabled = false));
+      for (const sel of ['[data-pair-in]', '[data-pair-out]']) {
+        this.querySelector(sel)!.addEventListener('click', () => {
+          if (popOpenOn(this)) return closeDates();
+          const labels = [...this.querySelectorAll('.pair__label')].map((l) => l.textContent ?? '') as [string, string];
+          openDates(
+            field
+              ? { context: 'field', anchor: this, checkIn: this.checkIn, checkOut: this.checkOut, labels, apply: (ci, co) => this.setDates(ci, co) }
+              : { context: 'book', anchor: this },
+          );
+        });
+      }
+      if (!field) {
+        this.unsub = stay.subscribe((s) => this.show(s.checkIn, s.checkOut));
+        this.show(stay.get().checkIn, stay.get().checkOut);
+      }
+    }
+
+    disconnectedCallback() {
+      this.unsub?.();
+    }
+
+    /** Field context: set the dates (from the picker, or prefilled from the URL). */
+    setDates(ci: string | null, co: string | null) {
+      this.checkIn = isIso(ci) ? ci : null;
+      this.checkOut = this.checkIn && isIso(co) && co > this.checkIn ? co : null;
+      const inInput = this.querySelector<HTMLInputElement>('[data-pair-in-input]');
+      const outInput = this.querySelector<HTMLInputElement>('[data-pair-out-input]');
+      if (inInput) inInput.value = this.checkIn ?? '';
+      if (outInput) outInput.value = this.checkOut ?? '';
+      this.show(this.checkIn, this.checkOut);
+      this.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    private show(ci: string | null, co: string | null) {
+      this.querySelector('[data-pair-in-value]')!.textContent = ci ? fmtShort(ci) : 'Add date';
+      this.querySelector('[data-pair-out-value]')!.textContent = co ? fmtShort(co) : 'Add date';
+      this.toggleAttribute('data-filled', !!(ci && co));
+    }
+  }
+
+  if (!customElements.get('tr-date-pair')) customElements.define('tr-date-pair', TrDatePair);
+</script>
+
+<style>
+  .pair {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--line);
+    border-radius: var(--r-input);
+    background: var(--paper);
+  }
+  .pair__cell {
+    display: grid;
+    gap: 2px;
+    min-height: 56px;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: var(--r-input);
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .pair__cell + .pair__cell {
+    border-left: 1px solid var(--line);
+    border-radius: 0 var(--r-input) var(--r-input) 0;
+  }
+  .pair__cell:hover {
+    box-shadow: inset 0 0 0 1px var(--forest);
+  }
+  .pair__cell:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: -2px;
+  }
+  .pair__label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--forest-soft);
+  }
+  .pair__value {
+    font-weight: 500;
+  }
+  .pair__nojs {
+    display: grid;
+    gap: 4px;
+    padding: 8px;
+    font-size: var(--t-small);
+  }
+</style>

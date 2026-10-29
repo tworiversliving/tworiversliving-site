@@ -70,6 +70,10 @@ This file records what is already built and the decisions made after the plan wa
 
 **Phase 4 (new chat):** tests with the mock PMS, Lighthouse, deploy and launch checklist.
 
+## Redesign Phase 3: date picker (29 Oct 2026)
+
+`<tr-calendar>` (src/scripts/tr-calendar.ts), the "Your dates" sheet and desktop popover (src/components/DateSheet.astro, logic in src/scripts/date-picker.ts, included once from Base.astro) and `DatePair.astro`, which replaces every native date input. Any element with `data-open-dates` opens the sheet. Prices and availability come from the existing /api/availability and /api/quote; no new endpoint. The mock PMS blocks the 8th to 11th and 22nd to 24th of every month, so stays over 14 nights can't be tested with it; use `--var PMS_PROVIDER:smoobu` (read-only until a payment completes).
+
 ## Testing Stripe locally
 
 1. Put the test keys from dashboard.stripe.com/test/apikeys in .dev.vars: `STRIPE_SECRET_KEY=sk_test_...` and `STRIPE_PUBLISHABLE_KEY=pk_test_...`.

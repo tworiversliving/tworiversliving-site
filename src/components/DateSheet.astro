@@ -1,0 +1,454 @@
+---
+// The "Your dates" picker (BRIEF.md 4.3), once per page from Base.astro. A bottom sheet on phones and a
+// modal on desktop, plus the popover that hangs under a date pair on desktop. Logic: src/scripts/date-picker.ts.
+import { booking } from '../config/booking';
+import { properties } from '../data/properties';
+
+const p = properties[0];
+const time = (t: string) => {
+  const h = Number(t.slice(0, 2));
+  return `${h % 12 || 12}${h < 12 ? 'am' : 'pm'}`;
+};
+---
+
+<dialog
+  class="sheet"
+  aria-labelledby="sheet-title"
+  data-date-sheet
+  data-slug={p.slug}
+  data-max-instant={booking.maxInstantNights}
+  data-max-nights={booking.maxNights}
+  data-max-guests={p.guests}
+  data-check-in={time(booking.checkInTime)}
+  data-check-out={time(booking.checkOutTime)}
+>
+  <div class="sheet__handle" data-handle aria-hidden="true"><span></span></div>
+  <div class="sheet__head">
+    <h2 id="sheet-title">Your dates</h2>
+    <button type="button" class="sheet__close" aria-label="Close" data-sheet-close>
+      <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5"></path></svg>
+    </button>
+  </div>
+
+  <div class="sheet__body">
+    <dl class="sheet__pair">
+      <div><dt class="mono" data-label-in>Check-in</dt><dd data-value-in>Add date</dd></div>
+      <div><dt class="mono" data-label-out>Checkout</dt><dd data-value-out>Add date</dd></div>
+    </dl>
+    <p class="sheet__status" data-status role="status" hidden></p>
+    <tr-calendar months="1"></tr-calendar>
+
+    <div class="sheet__guests" data-guests-row>
+      <span id="sheet-guests">Guests</span>
+      <div class="stepper" role="group" aria-labelledby="sheet-guests">
+        <button type="button" class="stepper__btn" aria-label="One fewer guest" data-guests-less>
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="1.5"></path></svg>
+        </button>
+        <output class="stepper__count" data-guests-count aria-live="polite">2</output>
+        <button type="button" class="stepper__btn" aria-label="One more guest" data-guests-more>
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 10h12M10 4v12" stroke="currentColor" stroke-width="1.5"></path></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet__foot">
+    <p class="sheet__sum"><span data-sum>Choose your dates</span><span class="mono" data-total></span></p>
+    <p class="sheet__note" data-note aria-live="polite"></p>
+    <button type="button" class="button button--block" data-go disabled>Continue</button>
+  </div>
+</dialog>
+
+<div class="date-pop" data-date-pop role="dialog" aria-label="Choose dates" hidden>
+  <tr-calendar months="2"></tr-calendar>
+  <button type="button" class="date-pop__close text-link" data-pop-close>Close</button>
+</div>
+
+<script>
+  import '../scripts/date-picker';
+</script>
+
+<style is:global>
+  /* ---------- Calendar ---------- */
+  tr-calendar {
+    position: relative;
+    display: block;
+  }
+  .cal__nav {
+    position: absolute;
+    inset: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+  .cal__arrow {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-top: -10px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--forest);
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  .cal__arrow:hover:not(:disabled) {
+    background: var(--mist);
+  }
+  .cal__arrow:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+  .cal__body {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+  .cal__title {
+    margin: 0 0 14px;
+    text-align: center;
+    font-weight: 500;
+    line-height: 24px;
+  }
+  .cal__dow,
+  .cal__grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  .cal__dow {
+    margin-bottom: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--forest-soft);
+    text-align: center;
+  }
+  .cal__grid {
+    row-gap: 2px;
+  }
+  .cal__day {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 1px;
+    height: 46px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+  }
+  .cal__n {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.1;
+  }
+  .cal__p {
+    min-height: 1em;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    line-height: 1;
+    color: var(--forest-soft);
+  }
+  .cal__day:hover:not([aria-disabled]) {
+    box-shadow: inset 0 0 0 1px var(--forest);
+  }
+  .cal__day:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: -2px;
+  }
+  .cal__day.is-today .cal__n {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .cal__day.is-off {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .cal__day.is-off .cal__n {
+    text-decoration: line-through;
+  }
+  .cal__day.is-short {
+    color: var(--forest-soft);
+    cursor: default;
+  }
+  .cal__day.is-range {
+    border-radius: 0;
+    background: var(--range);
+  }
+  .cal__day.is-edge {
+    opacity: 1;
+    background: var(--forest);
+    color: var(--paper);
+  }
+  .cal__day.is-edge .cal__n {
+    text-decoration: none;
+  }
+  .cal__day.is-edge .cal__p {
+    color: var(--on-forest-2);
+  }
+  .cal__hint {
+    min-height: 1.5em;
+    margin: 12px 0 0;
+    font-size: var(--t-small);
+    color: var(--text-3);
+  }
+
+  /* ---------- Sheet: bottom sheet on phones ---------- */
+  html.sheet-open {
+    overflow: hidden;
+  }
+  .sheet {
+    position: fixed;
+    inset: 118px 0 0;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 -8px 32px rgb(29 34 27 / 0.18);
+    overscroll-behavior: contain;
+    transition: transform 0.2s ease-out;
+  }
+  .sheet[open] {
+    display: flex;
+    flex-direction: column;
+    animation: sheet-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .sheet.is-dragging {
+    transition: none;
+  }
+  .sheet::backdrop {
+    background: var(--scrim);
+    animation: scrim-in 0.28s ease-out;
+  }
+  @keyframes sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes scrim-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .sheet__handle {
+    display: grid;
+    place-items: center;
+    height: 22px;
+    flex-shrink: 0;
+    touch-action: none;
+    cursor: grab;
+  }
+  .sheet__handle span {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line);
+  }
+  .sheet__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+    padding: 0 max(var(--gutter), env(safe-area-inset-right)) 12px max(var(--gutter), env(safe-area-inset-left));
+  }
+  .sheet__head h2 {
+    margin: 0;
+    font-size: var(--t-h3);
+    line-height: 1.1;
+    color: var(--forest);
+  }
+  .sheet__close,
+  .stepper__btn {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--forest);
+    cursor: pointer;
+  }
+  .sheet__close:hover,
+  .stepper__btn:hover:not(:disabled) {
+    border-color: var(--forest);
+  }
+  .stepper__btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .sheet__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 max(var(--gutter), env(safe-area-inset-right)) var(--s3) max(var(--gutter), env(safe-area-inset-left));
+  }
+  .sheet__pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 0 0 var(--s3);
+    border-top: 1px solid var(--line-strong);
+    border-bottom: 1px solid var(--line);
+  }
+  .sheet__pair div {
+    display: grid;
+    gap: 2px;
+    padding: 10px 0;
+  }
+  .sheet__pair div + div {
+    padding-left: var(--s2);
+    border-left: 1px solid var(--line);
+  }
+  .sheet__pair dt {
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--forest-soft);
+  }
+  .sheet__pair dd {
+    margin: 0;
+    font-weight: 500;
+  }
+  .sheet__status {
+    margin: 0 0 var(--s2);
+    font-size: var(--t-small);
+    color: var(--text-3);
+  }
+
+  .sheet__guests {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--s2);
+    padding-top: var(--s2);
+    border-top: 1px solid var(--line);
+    font-weight: 500;
+  }
+  .sheet__guests[hidden] {
+    display: none;
+  }
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .stepper__count {
+    min-width: 1.5ch;
+    font-family: var(--font-mono);
+    text-align: center;
+  }
+
+  .sheet__foot {
+    flex-shrink: 0;
+    padding: 14px max(var(--gutter), env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
+    border-top: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .sheet__sum {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s2);
+    margin: 0;
+    font-weight: 500;
+  }
+  .sheet__note {
+    min-height: 1.4em;
+    margin: 2px 0 12px;
+    font-size: var(--t-small);
+    color: var(--text-3);
+  }
+  .sheet__note.is-error {
+    color: var(--error);
+  }
+  .sheet [data-go]:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .sheet [data-go]:disabled:hover {
+    background: var(--forest);
+    border-color: var(--forest);
+  }
+
+  /* Desktop: the same sheet as a centred modal with two months */
+  @media (min-width: 900px) {
+    .sheet {
+      inset: 0;
+      width: min(760px, calc(100% - 80px));
+      height: fit-content;
+      max-height: min(760px, calc(100dvh - 48px));
+      margin: auto;
+      border-radius: var(--r-card);
+    }
+    .sheet[open] {
+      animation: scrim-in 0.2s ease-out;
+    }
+    .sheet__handle {
+      height: 20px;
+      cursor: default;
+    }
+    .sheet__handle span {
+      display: none;
+    }
+    .sheet__head,
+    .sheet__body,
+    .sheet__foot {
+      padding-inline: 32px;
+    }
+    .sheet__foot {
+      padding-bottom: 24px;
+    }
+  }
+
+  /* ---------- Popover under a date pair (desktop) ---------- */
+  .date-pop {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 30;
+    width: max-content;
+    padding: 20px 24px 16px;
+    border: 1px solid var(--forest);
+    border-radius: var(--r-card);
+    background: var(--paper);
+  }
+  .date-pop--end {
+    left: auto;
+    right: 0;
+  }
+  .date-pop[hidden] {
+    display: none;
+  }
+  .date-pop tr-calendar[months='1'] {
+    width: 308px;
+  }
+  .date-pop tr-calendar[months='2'] {
+    width: 648px;
+  }
+  .date-pop__close {
+    display: block;
+    margin: 4px 0 0 auto;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    color: var(--forest);
+    font: inherit;
+    font-size: var(--t-small);
+    cursor: pointer;
+  }
+</style>

@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import PropertyCard from '../../components/PropertyCard.astro';
+import DatePair from '../../components/DatePair.astro';
 import { booking } from '../../config/booking';
 import { properties } from '../../data/properties';
 
@@ -18,14 +19,10 @@ const areas = [...new Set(properties.map((p) => p.area))];
   <div class="container">
     <!-- Phase 2: with dates set, each card shows "Available" and the total, or greys out. -->
     <form class="filter" action="/stays" method="get" data-stays-filter>
-      <div class="field">
-        <label for="checkin">Check-in</label>
-        <input id="checkin" name="checkin" type="date" />
-      </div>
-      <div class="field">
-        <label for="checkout">Check-out</label>
-        <input id="checkout" name="checkout" type="date" />
-      </div>
+      <fieldset class="field dates">
+        <legend class="visually-hidden">Dates</legend>
+        <DatePair context="field" names={['checkin', 'checkout']} />
+      </fieldset>
       <div class="field">
         <label for="guests">Guests</label>
         <select id="guests" name="guests">
@@ -66,7 +63,10 @@ const areas = [...new Set(properties.map((p) => p.area))];
   const form = document.querySelector<HTMLFormElement>('[data-stays-filter]');
   const params = new URLSearchParams(location.search);
   if (form) {
-    for (const name of ['checkin', 'checkout', 'guests', 'area']) {
+    customElements.whenDefined('tr-date-pair').then(() => {
+      form.querySelector<HTMLElement & { setDates(a: string | null, b: string | null): void }>('tr-date-pair')?.setDates(params.get('checkin'), params.get('checkout'));
+    });
+    for (const name of ['guests', 'area']) {
       const el = form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null;
       const value = params.get(name);
       if (el && value) el.value = value;
@@ -87,6 +87,16 @@ const areas = [...new Set(properties.map((p) => p.area))];
     .filter {
       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       align-items: end;
+    }
+  }
+  .dates {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  @media (min-width: 768px) {
+    .dates {
+      grid-column: span 2;
     }
   }
   .stays-section {
