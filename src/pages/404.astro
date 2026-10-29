@@ -1,31 +1,30 @@
 ---
 import Base from '../layouts/Base.astro';
+import Button from '../components/ui/Button.astro';
+import { properties } from '../data/properties';
 ---
 
 <Base title="Page not found" description="This page doesn't exist." noindex>
-  <div class="container narrow page-head notfound">
-    <img src="/brand/mark.svg" alt="" width="64" height="40" />
-    <h1>We can't find that page</h1>
+  <div class="container page-head notfound">
+    <p class="label">404</p>
+    <h1>We can't find <em>that page</em></h1>
     <p>The link may be old, or the address mistyped.</p>
     <p class="links">
-      <a class="button" href="/stays">See our stays</a>
-      <a class="button button--ghost" href="/">Home</a>
+      <Button href={`/stays/${properties[0].slug}`}>See the flat</Button>
+      <Button href="/" variant="secondary">Home</Button>
     </p>
   </div>
 </Base>
 
 <style>
   .notfound {
+    min-height: 70vh;
     padding-bottom: var(--section);
-  }
-  .notfound img {
-    width: 64px;
-    height: auto;
-    margin-bottom: var(--s4);
   }
   .links {
     display: flex;
     flex-wrap: wrap;
     gap: var(--s2);
+    margin-top: var(--s4);
   }
 </style>

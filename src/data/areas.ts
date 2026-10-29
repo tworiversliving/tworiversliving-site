@@ -1,12 +1,13 @@
 // Area guides, one page each at /areas/<slug>. Picks come from the hosts' own guidebook.
-// Anything in [square brackets] is a placeholder and shows highlighted on the page until replaced.
+// Still to add is marked TO ADD in the comments. A section with no intro and no items is hidden,
+// and a place with no note shows its name alone. Bus routes come from src/data/todo.ts.
 
 export interface AreaSection {
   title: string;
   intro: string;
   /** Places or tips. Leave empty until the real picks are added. */
   items: { name: string; note: string }[];
-  /** Photo file names from the area's property folder. */
+  /** Photo file names from the area's property folder. A file not added yet shows a toned block. */
   photos?: string[];
 }
 
@@ -32,34 +33,39 @@ export const areas: Area[] = [
     sections: [
       {
         title: 'Getting around',
-        intro:
-          'Stoke Newington station is a five-minute walk from the flat, with trains to Liverpool Street in 15 minutes. [Add bus routes and times once confirmed.]',
+        intro: 'Stoke Newington station is a five-minute walk from the flat, with trains to Liverpool Street in 15 minutes.',
         items: [],
+        photos: ['stoke-newington-station.jpg'],
       },
       {
         title: 'Eat and drink',
-        intro: 'Church Street is a minute away and has most of what you need. [Add the guidebook picks: name and one line each.]',
+        // TO ADD: the guidebook picks, name and one line each.
+        intro: 'Church Street is a minute away and has most of what you need.',
         items: [],
         photos: ['church-street.jpg'],
       },
       {
         title: 'Parks',
         intro: 'Three green spaces within walking distance.',
+        // TO ADD: one line from the guidebook for each park.
         items: [
-          { name: 'Clissold Park', note: '[One line from the guidebook.]' },
-          { name: 'Abney Park', note: '[One line from the guidebook.]' },
-          { name: 'Springfield Park', note: '[One line from the guidebook.]' },
+          { name: 'Clissold Park', note: '' },
+          { name: 'Abney Park', note: '' },
+          { name: 'Springfield Park', note: '' },
         ],
         photos: ['clissold-park.jpg'],
       },
       {
         title: 'Working nearby',
-        intro: 'If you want a change from the desk in the flat. [Add cafés with good wifi and space to sit.]',
+        // TO ADD: cafés with good wifi and space to sit.
+        intro: 'If you want a change from the desk in the flat.',
         items: [],
+        photos: ['working-nearby.jpg'],
       },
       {
         title: 'With children',
-        intro: '[Add family picks from the guidebook.]',
+        // TO ADD: family picks from the guidebook. Hidden until there is an intro or items.
+        intro: '',
         items: [],
       },
     ],

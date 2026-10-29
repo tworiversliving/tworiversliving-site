@@ -1,73 +1,56 @@
 ---
 import Base from '../layouts/Base.astro';
+import Schedule from '../components/ui/Schedule.astro';
 import EnquiryForm from '../components/EnquiryForm.astro';
 import { site } from '../config/site';
+import { todo } from '../data/todo';
 ---
 
 <Base title="Contact" description={`Get in touch with ${site.hosts} at ${site.name}. ${site.responseTime}`}>
   <div class="container page-head">
-    <span class="kicker">Contact</span>
     <h1>Get in touch</h1>
-    <p>{site.responseTime}</p>
+    <p>We reply within a few hours, between 8am and 10pm.</p>
   </div>
 
-  <div class="container layout">
-    <div>
-      <h2 class="visually-hidden">Send us a message</h2>
-      <EnquiryForm type="contact" />
+  <section class="section section--ruled">
+    <div class="container layout">
+      <div>
+        <h2 class="visually-hidden">Send us a message</h2>
+        <EnquiryForm type="contact" />
+      </div>
+
+      <aside class="details" aria-labelledby="other-title">
+        <h2 id="other-title" class="h3">Other ways to reach us</h2>
+        <Schedule
+          rows={[
+            { key: 'Email', value: site.email, href: `mailto:${site.email}` },
+            { key: 'WhatsApp', value: todo.whatsapp, href: todo.whatsappHref || undefined },
+            { key: 'Post', value: `${site.legalName}, ${site.correspondenceAddress}` },
+          ]}
+        />
+        <p class="details__note">Booking a work or long stay? The <a href="/work-stays#quote">quote form</a> asks for everything we need.</p>
+      </aside>
     </div>
-
-    <aside class="details">
-      <h2>Other ways to reach us</h2>
-      <dl>
-        <div>
-          <dt>Email</dt>
-          <dd><a href={`mailto:${site.email}`}>{site.email}</a></dd>
-        </div>
-        <div>
-          <dt>Phone or WhatsApp</dt>
-          <dd>{site.phoneHref ? <a href={site.phoneHref}>{site.phone}</a> : <span class="todo">[phone number to add]</span>}</dd>
-        </div>
-        <div>
-          <dt>Post</dt>
-          <dd>
-            {site.legalName}<br />
-            {site.correspondenceAddress}
-          </dd>
-        </div>
-      </dl>
-      <p class="small muted">Booking a work or long stay? The <a href="/work-stays">quote form</a> asks for everything we need.</p>
-    </aside>
-  </div>
+  </section>
 </Base>
 
 <style>
   .layout {
     display: grid;
-    gap: var(--s6);
-    padding-bottom: var(--section);
+    gap: var(--s8);
   }
-  @media (min-width: 960px) {
+  @media (min-width: 900px) {
     .layout {
-      grid-template-columns: minmax(0, 1.4fr) 1fr;
+      grid-template-columns: minmax(0, 7fr) 5fr;
       gap: var(--s8);
     }
   }
   .details h2 {
-    font-size: var(--text-xl);
+    margin-bottom: var(--s3);
   }
-  dl {
-    margin: 0 0 var(--s3);
-  }
-  dl div {
-    padding-block: var(--s2);
-    border-bottom: 1px solid var(--line);
-  }
-  dt {
-    font-size: var(--text-sm);
-    font-weight: 600;
-  }
-  dd {
-    margin: 0;
+  .details__note {
+    margin-top: var(--s3);
+    font-size: var(--t-small);
+    color: var(--text-3);
   }
 </style>

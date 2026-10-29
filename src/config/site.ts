@@ -1,5 +1,6 @@
 // Business details shown across the site. Values in [square brackets] are placeholders:
-// replace them before the site goes live (see README, "Before launch").
+// replace them before the site goes live (see README, "Before launch"). Pages hide a line while its
+// value is a placeholder (see `filled` below); the email footer still prints them.
 
 export const site = {
   name: 'Two Rivers Living',
@@ -29,3 +30,6 @@ export const nav = [
   { href: '/areas/stoke-newington', label: 'Stoke Newington' },
   { href: '/faq', label: 'Questions' },
 ];
+
+/** False while a value is empty or still a [placeholder], so pages can hide the line instead. */
+export const filled = (value: string) => value.trim() !== '' && !value.includes('[');

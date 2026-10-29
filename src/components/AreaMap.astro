@@ -6,19 +6,25 @@ import type { Property } from '../data/properties';
 
 interface Props {
   property: Property;
+  /** Makes the map a link, e.g. to Google Maps. */
+  href?: string;
 }
 
-const { property: p } = Astro.props;
+const { property: p, href } = Astro.props;
+const Wrap = href ? 'a' : 'div';
 const { tiles, cx, cy, r } = mapLayout(p.map);
 ---
 
 <figure class="map">
+  <Wrap class="map__frame" href={href} target={href ? '_blank' : undefined} rel={href ? 'noopener' : undefined}>
   <svg viewBox={`0 0 ${MAP.width} ${MAP.height}`} role="img" aria-label={`Map of ${p.area}. The circle shows roughly where the flat is.`}>
     <g class="map__tiles">
       {tiles.map((t) => <image href={`/maps/${p.slug}/${t.file}`} x={t.dx} y={t.dy} width={MAP.tileSize} height={MAP.tileSize} />)}
     </g>
     <circle cx={cx} cy={cy} r={r} class="map__area" />
   </svg>
+  {href && <span class="map__open">Open in Google Maps</span>}
+  </Wrap>
   <figcaption class="small muted">
     The flat is somewhere inside the circle. Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>.
   </figcaption>
@@ -28,13 +34,31 @@ const { tiles, cx, cy, r } = mapLayout(p.map);
   .map {
     margin: 0 0 var(--s3);
   }
+  .map__frame {
+    position: relative;
+    display: block;
+  }
   .map svg {
     display: block;
     width: 100%;
     height: auto;
     background: var(--line);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
+  }
+  .map__open {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    padding: 6px 14px;
+    border-radius: var(--r-pill);
+    background: var(--paper);
+    color: var(--forest);
+    font-size: var(--t-small);
+    font-weight: 500;
+    text-decoration: none;
+  }
+  a.map__frame:hover .map__open {
+    background: var(--forest);
+    color: var(--paper);
   }
   /* Mute the OSM colours so the map sits with the palette */
   .map__tiles {

@@ -1,10 +1,12 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Photo from '../../components/ui/Photo.astro';
-import PhotoCard from '../../components/PhotoCard.astro';
+import Button from '../../components/ui/Button.astro';
+import Schedule from '../../components/ui/Schedule.astro';
 import Text from '../../components/Text.astro';
 import { areas, type Area } from '../../data/areas';
 import { properties } from '../../data/properties';
+import { todo } from '../../data/todo';
 
 export function getStaticPaths() {
   return areas.map((area) => ({ params: { slug: area.slug }, props: { area } }));
@@ -17,133 +19,149 @@ interface Props {
 const { area } = Astro.props;
 const homes = properties.filter((p) => p.areaSlug === area.slug);
 const source = properties.find((p) => p.slug === area.propertySlug);
-const walking = source?.walkingTimes ?? [];
-const areaPhoto = area.sections.flatMap((s) => s.photos ?? [])[0];
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-// One photo per room for each flat's card, starting with its card photo. No neighbourhood or TV shots.
-const cardPhotos = (p: (typeof homes)[number]) => {
-  const pool = p.photos.filter((ph) => ph.room !== 'Neighbourhood' && !ph.tv);
-  const first = pool.find((ph) => ph.file === p.cardPhoto) ?? pool[0];
-  const rest = [...new Set(pool.map((ph) => ph.room))].filter((r) => r !== first.room).map((r) => pool.find((ph) => ph.room === r)!);
-  return [first, ...rest];
-};
+// Bus routes are still a TODO: the row hides until it is filled in.
+const distances = [...(source?.walkingTimes ?? []).map((w) => ({ key: w.place, value: w.time })), { key: 'Buses', value: todo.busRoutes }];
+// A section with nothing to say yet stays off the page
+const sections = area.sections.filter((s) => s.intro.trim() || s.items.length);
+const areaPhoto = sections.flatMap((s) => s.photos ?? [])[0];
+const alt = (file: string) => source?.photos.find((x) => x.file === file)?.alt ?? '';
 ---
 
-<Base
-  title={`${area.name} guide`}
-  description={area.description}
-  ogPhoto={areaPhoto ? { slug: area.propertySlug, file: areaPhoto } : undefined}
->
-  <div class="container narrow page-head">
-    <span class="kicker">Area guide</span>
-    <h1>{area.name}</h1>
-    {area.intro.map((para) => <p>{para}</p>)}
-  </div>
-
-  <div class="container narrow">
-    {
-      walking.length > 0 && (
-        <dl class="times">
-          {walking.map((w) => (
-            <div>
-              <dt>{w.place}</dt>
-              <dd>{w.time}</dd>
-            </div>
-          ))}
-        </dl>
-      )
-    }
-
-    {
-      area.sections.map((s) => (
-        <section class="part">
-          <h2>{s.title}</h2>
-          <p>
-            <Text text={s.intro} />
-          </p>
-          {s.items.length > 0 && (
-            <ul class="places">
-              {s.items.map((i) => (
-                <li>
-                  <strong>{i.name}</strong>
-                  <span class="muted">
-                    <Text text={i.note} />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {source &&
-            s.photos?.map((file) => {
-              const ph = source.photos.find((x) => x.file === file);
-              return <Photo slug={source.slug} file={file} alt={ph?.alt ?? ''} sizes="(min-width: 800px) 760px, 100vw" />;
-            })}
-        </section>
-      ))
-    }
+<Base title={`${area.name} guide`} description={area.description} ogPhoto={areaPhoto ? { slug: area.propertySlug, file: areaPhoto } : undefined}>
+  <div class="container page-head guide-head">
+    <div>
+      <p class="label">Area guide</p>
+      <h1>{area.name}</h1>
+      {area.intro.map((para) => <p>{para}</p>)}
+    </div>
+    {distances.length > 1 && <Schedule variant="distance" rows={distances} class="guide-head__times" />}
   </div>
 
   {
-    homes.length > 0 && (
-      <section class="section">
-        <div class="container">
-          <h2>Stay in {area.name}</h2>
-          <div class="homes">
-            {homes.map((p) => (
-              <PhotoCard
-                slug={p.slug}
-                label={p.area}
-                title={p.name}
-                meta={`${plural(p.guests, 'guest')} · ${plural(p.bedrooms, 'bedroom')} · ${plural(p.bathrooms, 'bathroom')}`}
-                photos={cardPhotos(p)}
-                note={`From £${p.fromPriceFallback} a night`}
-                href={`/stays/${p.slug}`}
-                sizes="(min-width: 640px) 400px, 100vw"
-              />
-            ))}
+    sections.map((s, i) => (
+      <section class="section section--ruled part" aria-labelledby={`part-${i}`}>
+        <div class:list={['container', 'part__grid', { 'part__grid--flip': i % 2 === 1 }]}>
+          <div class="part__text">
+            <h2 id={`part-${i}`}>{s.title}</h2>
+            {s.intro && (
+              <p class="lead">
+                <Text text={s.intro} />
+              </p>
+            )}
+            {s.items.length > 0 && (
+              <ul class="places">
+                {s.items.map((item) => (
+                  <li>
+                    <span class="places__name">{item.name}</span>
+                    {item.note && (
+                      <span class="places__note">
+                        <Text text={item.note} />
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {source && s.photos?.[0] && (
+            <Photo slug={source.slug} file={s.photos[0]} alt={alt(s.photos[0])} ratio="3/2" sizes="(min-width: 900px) 620px, 100vw" />
+          )}
+        </div>
+      </section>
+    ))
+  }
+
+  {
+    homes.map((p) => (
+      <section class="section section--mist stay" aria-labelledby="stay-title">
+        <div class="container split">
+          <h2 id="stay-title">Stay a minute from Church Street</h2>
+          <div>
+            <p class="lead">{p.summary}</p>
+            <Schedule
+              ground="mist"
+              rows={[
+                { key: 'Sleeps', value: `${p.guests}, ${p.beds}` },
+                { key: 'From', value: `£${p.fromPriceFallback} a night, no fees` },
+              ]}
+            />
+            <p class="stay__actions">
+              <Button href={`/stays/${p.slug}#book`} data-open-dates>
+                Check dates
+              </Button>
+              <Button href={`/stays/${p.slug}`} variant="secondary">
+                See the flat
+              </Button>
+            </p>
           </div>
         </div>
       </section>
-    )
+    ))
   }
 </Base>
 
 <style>
-  .times {
-    margin: 0 0 var(--s4);
+  .guide-head {
+    display: grid;
+    gap: var(--s5);
   }
-  .times div {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--s2);
-    padding: var(--s1) 0;
-    border-bottom: 1px solid var(--line);
+  @media (min-width: 900px) {
+    .guide-head {
+      grid-template-columns: 6fr 5fr;
+      gap: var(--s8);
+      align-items: end;
+    }
   }
-  .times dd {
-    margin: 0;
-    color: var(--forest-soft);
-  }
-  .part {
-    padding-block: var(--s5);
-    border-top: 1px solid var(--line);
+
+  .part__grid {
+    display: grid;
+    gap: var(--s4);
   }
   .part h2 {
-    font-size: var(--text-xl);
+    font-size: var(--t-h3);
+    line-height: 1.1;
   }
+  @media (min-width: 900px) {
+    .part__grid {
+      grid-template-columns: 5fr 6fr;
+      gap: var(--s8);
+      align-items: start;
+    }
+    .part__grid--flip .part__text {
+      order: 1;
+    }
+    .part h2 {
+      font-size: var(--t-h2);
+      line-height: 1;
+    }
+  }
+
   .places {
-    margin: 0 0 var(--s3);
+    margin: var(--s3) 0 0;
     padding: 0;
     list-style: none;
+    border-top: 1px solid var(--line-strong);
   }
   .places li {
     display: grid;
-    padding-block: var(--s1);
+    gap: 2px;
+    padding-block: 12px;
+    border-bottom: 1px solid var(--line);
   }
-  /* Cards about 300 to 400px wide, as many as fit. The container lets the card's photos swipe once it is wide. */
-  .homes {
-    container-type: inline-size;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 400px));
+  .places__name {
+    font-weight: 500;
+  }
+  .places__note {
+    color: var(--text-3);
+  }
+
+  .stay h2 {
+    font-size: var(--t-h2);
+  }
+  .stay__actions {
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--s2);
+    margin: var(--s4) 0 0;
   }
 </style>

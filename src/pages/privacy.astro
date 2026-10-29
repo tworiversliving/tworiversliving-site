@@ -1,7 +1,6 @@
 ---
 import Legal from '../layouts/Legal.astro';
-import Text from '../components/Text.astro';
-import { site } from '../config/site';
+import { filled, site } from '../config/site';
 
 // Keep this in step with the code: retention periods are enforced by the daily job in src/lib/jobs.ts,
 // and the providers listed are the ones the site actually calls.
@@ -15,11 +14,11 @@ import { site } from '../config/site';
 >
   <h2>Who we are</h2>
   <p>
-    {site.legalName} is the controller of your personal information. We're registered in England and Wales, company no. <Text
-      text={site.companyNumber}
-    />, at <Text text={site.registeredOffice} />. We're registered with the Information Commissioner's Office, registration number <Text
-      text={site.icoNumber}
-    />.
+    {site.legalName} is the controller of your personal information. We're registered in England and Wales{
+      filled(site.companyNumber) && `, company no. ${site.companyNumber}`
+    }{filled(site.registeredOffice) && `, at ${site.registeredOffice}`}.{
+      filled(site.icoNumber) && ` We're registered with the Information Commissioner's Office, registration number ${site.icoNumber}.`
+    }
   </p>
   <p>Questions about your information go to <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
 

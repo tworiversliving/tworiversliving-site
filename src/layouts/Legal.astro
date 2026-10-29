@@ -17,35 +17,52 @@ const updatedText = new Date(`${updated}T12:00:00Z`).toLocaleDateString('en-GB',
 ---
 
 <Base title={title} description={description}>
-  <div class="container narrow page-head">
-    <span class="kicker">{kicker}</span>
+  <div class="container page-head">
+    <p class="label">{kicker}</p>
     <h1>{title}</h1>
     {intro && <p>{intro}</p>}
-    <p class="small muted">Last updated {updatedText}</p>
+    <p class="mono updated">Last updated {updatedText}</p>
   </div>
 
-  <article class="container narrow legal">
-    <slot />
-  </article>
+  <div class="section section--ruled">
+    <article class="container legal">
+      <slot />
+    </article>
+  </div>
 </Base>
 
 <style>
-  .page-head .small {
-    font-size: var(--text-sm);
+  .page-head .updated {
+    margin: var(--s3) 0 0;
+    font-size: var(--t-mono);
+    color: var(--forest-soft);
   }
   .legal {
-    padding-bottom: var(--section);
+    color: var(--text-2);
+  }
+  .legal > :global(*) {
+    max-width: 44em;
+  }
+  .legal :global(p),
+  .legal :global(ul) {
+    max-width: var(--measure);
   }
   .legal :global(h2) {
-    margin-top: var(--s6);
-    font-size: var(--text-xl);
+    margin-top: var(--s8);
+    font-size: var(--t-h3);
+    line-height: 1.1;
   }
   .legal :global(h2:first-child) {
     margin-top: 0;
   }
   .legal :global(h3) {
     margin-top: var(--s4);
-    font-size: 1.0625rem;
+    font-size: var(--t-body);
+    color: var(--ink);
+  }
+  .legal :global(strong) {
+    font-weight: 500;
+    color: var(--ink);
   }
   .legal :global(ul) {
     padding-left: 1.25em;
@@ -57,17 +74,23 @@ const updatedText = new Date(`${updated}T12:00:00Z`).toLocaleDateString('en-GB',
     width: 100%;
     margin-bottom: var(--s3);
     border-collapse: collapse;
-    font-size: var(--text-sm);
+    border-top: 1px solid var(--line-strong);
+    font-size: var(--t-small);
   }
   .legal :global(th),
   .legal :global(td) {
-    padding: var(--s1) var(--s2) var(--s1) 0;
+    padding: 10px var(--s2) 10px 0;
     border-bottom: 1px solid var(--line);
     text-align: left;
     vertical-align: top;
   }
   .legal :global(th) {
-    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--forest-soft);
   }
   /* Tables scroll sideways on small screens rather than squashing */
   .legal :global(.table) {

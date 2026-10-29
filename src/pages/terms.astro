@@ -1,8 +1,7 @@
 ---
 import Legal from '../layouts/Legal.astro';
-import Text from '../components/Text.astro';
 import { booking, extras } from '../config/booking';
-import { site } from '../config/site';
+import { filled, site } from '../config/site';
 
 // The page date is the terms version, so what a guest agreed to (bookings.terms_version) matches what's shown here.
 // Bump booking.termsVersion whenever anything below changes.
@@ -18,9 +17,9 @@ const days = booking.freeCancellationDays;
 >
   <h2>1. Who we are</h2>
   <p>
-    {site.legalName}, registered in England and Wales, company no. <Text text={site.companyNumber} />. Registered office: <Text
-      text={site.registeredOffice}
-    />.
+    {site.legalName}, registered in England and Wales{filled(site.companyNumber) && `, company no. ${site.companyNumber}`}.{
+      filled(site.registeredOffice) && ` Registered office: ${site.registeredOffice}.`
+    }
   </p>
   <p>
     Email <a href={`mailto:${site.email}`}>{site.email}</a>{site.phoneHref ? <>, phone <a href={site.phoneHref}>{site.phone}</a></> : ''}.

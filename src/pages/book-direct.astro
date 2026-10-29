@@ -1,7 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
+import Button from '../components/ui/Button.astro';
 import { booking } from '../config/booking';
 import { site } from '../config/site';
+import { properties } from '../data/properties';
+
+const flatHref = `/stays/${properties[0].slug}`;
 
 const points = [
   {
@@ -28,24 +32,27 @@ const points = [
 ---
 
 <Base title="Why book direct" description="Book our homes direct: our lowest price, no booking fees, flexible cancellation and a direct line to the hosts.">
-  <div class="container narrow page-head">
-    <span class="kicker">Book direct</span>
-    <h1>Why book with us direct</h1>
+  <div class="container page-head">
+    <p class="label">Book direct</p>
+    <h1>Why book with us <em>direct</em></h1>
     <p>Booking here means a better price for you and a direct relationship with the people who run the flat.</p>
   </div>
 
-  <div class="container narrow">
+  <div class="container">
     <ol class="list">
       {
         points.map((pt) => (
           <li>
             <h2>{pt.title}</h2>
-            <p class="muted">{pt.body}</p>
+            <p>{pt.body}</p>
           </li>
         ))
       }
     </ol>
-    <p class="end"><a class="button" href="/stays">Find dates</a></p>
+    <p class="end">
+      <Button href={`${flatHref}#book`} data-open-dates>Check dates</Button>
+      <Button href={flatHref} variant="secondary">See the flat</Button>
+    </p>
   </div>
 </Base>
 
@@ -54,19 +61,51 @@ const points = [
     margin: 0;
     padding: 0;
     list-style: none;
+    counter-reset: point;
+    border-top: 1px solid var(--line-strong);
   }
   .list li {
+    counter-increment: point;
+    display: grid;
+    grid-template-columns: 2.5em 1fr;
+    gap: 4px var(--s2);
     padding-block: var(--s4);
-    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .list li::before {
+    content: counter(point, decimal-leading-zero);
+    grid-row: span 2;
+    padding-top: 0.6em;
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    color: var(--brass-deep);
   }
   .list h2 {
-    font-size: var(--text-xl);
-    margin-bottom: var(--s1);
+    margin: 0;
+    font-size: var(--t-h3);
+    line-height: 1.1;
   }
   .list p {
+    max-width: var(--measure);
     margin: 0;
+    color: var(--text-3);
+  }
+  @media (min-width: 900px) {
+    .list li {
+      grid-template-columns: 4em 5fr 6fr;
+      gap: var(--s5);
+      align-items: baseline;
+    }
+    .list li::before {
+      grid-row: auto;
+      padding-top: 0;
+    }
   }
   .end {
-    padding-block: var(--s4) var(--section);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    margin: 0;
+    padding-block: var(--s6) var(--section);
   }
 </style>

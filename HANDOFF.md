@@ -74,6 +74,10 @@ This file records what is already built and the decisions made after the plan wa
 
 `<tr-calendar>` (src/scripts/tr-calendar.ts), the "Your dates" sheet and desktop popover (src/components/DateSheet.astro, logic in src/scripts/date-picker.ts, included once from Base.astro) and `DatePair.astro`, which replaces every native date input. Any element with `data-open-dates` opens the sheet. Prices and availability come from the existing /api/availability and /api/quote; no new endpoint. Stays over 14 nights ignore the PMS calendar (decided 29 Oct 2026): any dates up to 89 nights can be chosen, even across booked nights or starting on one, and go to the enquiry for the hosts to check. The enquiry form's picker shows no availability or prices. Short stays still have to fit free nights.
 
+## Redesign Phase 4: property page (29 Oct 2026)
+
+`src/pages/stays/[slug].astro` rebuilt to BRIEF.md 4.2. The gallery and room tiles still use PhotoCarousel and PhotoCard, restyled from the page. The lightbox and "All N photos" count only include photo files that exist (19 today, so the brief's "24" isn't shown); TV shots come last in each room. New fields in properties.ts: `street`, `headline`, `floor`. StickyBar.astro has a `bar` variant (full-width paper bar, always shown). AreaMap.astro takes an `href` (links to a Google Maps search for the area, not the circle centre). BookingPanel.astro restyled only; its logic and the over-14-nights rule are unchanged. The "Working here" list (with its bracketed wifi placeholder) is folded into the "What's in the flat" schedule; the hosts paragraph moved to the HOSTS row.
+
 ## Testing Stripe locally
 
 1. Put the test keys from dashboard.stripe.com/test/apikeys in .dev.vars: `STRIPE_SECRET_KEY=sk_test_...` and `STRIPE_PUBLISHABLE_KEY=pk_test_...`.

@@ -94,8 +94,8 @@ html {
 
 body {
   margin: 0;
-  background: var(--mist);
-  color: var(--forest);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--t-body);
   line-height: 1.55;
@@ -125,6 +125,7 @@ h2,
   font-family: var(--font-display);
   font-weight: 400;
   line-height: 1;
+  color: var(--forest);
 }
 
 h1 {
@@ -215,14 +216,18 @@ hr {
   padding-top: 0;
 }
 
-.section--paper {
-  background: var(--paper);
-  border-block: 1px solid var(--line);
+.section--mist {
+  background: var(--mist);
 }
 
-.section--paper + .section,
-.section + .section--paper {
+/* A change of ground separates sections on its own, so the next one keeps its full top padding */
+.section--mist + .section,
+.section + .section--mist,
+.section--ruled {
   padding-top: var(--section);
+}
+.section--ruled {
+  border-top: 1px solid var(--line);
 }
 
 .grid-2 {
@@ -237,15 +242,44 @@ hr {
   }
 }
 
+/* Type-only page head: optional label, Redaction h1, intro in --text-2 */
 .page-head {
-  padding-top: calc(var(--header-h) + var(--s8));
+  padding-top: calc(var(--header-h) + var(--s5));
   padding-bottom: var(--s6);
 }
-
+.page-head h1 {
+  max-width: 14em;
+  margin-bottom: var(--s3);
+}
 .page-head p {
-  max-width: 38em;
-  font-size: var(--text-lg);
-  color: var(--forest-soft);
+  max-width: var(--measure);
+  color: var(--text-2);
+}
+@media (min-width: 900px) {
+  .page-head {
+    padding-top: calc(var(--header-h) + var(--s8));
+    padding-bottom: var(--s8);
+  }
+  .page-head p {
+    font-size: var(--t-lead);
+  }
+}
+
+/* Heading left, content right from 900px. Used for FAQ groups, terms and other two-part sections. */
+.split {
+  display: grid;
+  gap: var(--s3);
+}
+@media (min-width: 900px) {
+  .split {
+    grid-template-columns: 4fr 7fr;
+    gap: var(--s8);
+  }
+}
+.split > h2,
+.split > :first-child h2 {
+  font-size: var(--t-h3);
+  line-height: 1.1;
 }
 
 /* Type helpers */
@@ -421,8 +455,9 @@ hr {
 
 .field label,
 .field legend {
-  font-size: var(--text-sm);
+  font-size: var(--t-small);
   font-weight: 500;
+  color: var(--ink);
 }
 
 input,
@@ -434,7 +469,7 @@ textarea {
   border: 1px solid var(--line);
   border-radius: var(--r-input);
   background: var(--paper);
-  color: var(--forest);
+  color: var(--ink);
   font: inherit;
 }
 textarea {
@@ -455,34 +490,37 @@ input[type='checkbox'] {
   accent-color: var(--forest);
 }
 
-/* Label and value rows, used for booking details */
+/* Label and value rows for booking details, set like a schedule: forest top rule, mono keys */
 .rows {
   margin: 0 0 var(--s3);
+  border-top: 1px solid var(--line-strong);
 }
 .rows div {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   gap: var(--s2);
-  padding: var(--s1) 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--line);
 }
 .rows dt {
+  font-family: var(--font-mono);
+  font-size: var(--t-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--forest-soft);
 }
 .rows dd {
   margin: 0;
   text-align: right;
-  font-weight: 500;
+  color: var(--ink);
 }
 
-/* Placeholder for content still to come. Easy to spot, easy to search for. */
-.todo {
-  display: inline-block;
-  padding: 0 0.3em;
-  border: 1px dashed var(--brass);
-  border-radius: var(--radius);
-  font-size: 0.9em;
-  color: var(--brass-deep);
+/* Inline form error */
+.error {
+  margin: 0;
+  color: var(--error);
+  font-weight: 500;
 }
 
 /* Motion: only the sheet, the sticky bar, focus and hover (BRIEF.md 5) */

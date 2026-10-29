@@ -11,31 +11,19 @@ import { faqPage } from '../lib/schema';
   description="Answers on booking, payment, cancellation, check-in and work stays at Two Rivers Living."
   schema={[faqPage(faqGroups.flatMap((g) => g.items))]}
 >
-  <div class="container narrow page-head">
-    <span class="kicker">FAQ</span>
+  <div class="container page-head">
     <h1>Questions and answers</h1>
     <p>Can't find what you need? Email <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
   </div>
 
-  <div class="container narrow groups">
-    {
-      faqGroups.map((g) => (
-        <section>
-          <h2>{g.title}</h2>
-          <Accordion items={g.items} />
-        </section>
-      ))
-    }
-  </div>
+  {
+    faqGroups.map((g, i) => (
+      <section class="section section--ruled" aria-labelledby={`group-${i}`}>
+        <div class="container split">
+          <h2 id={`group-${i}`}>{g.title}</h2>
+          <Accordion items={g.items} openFirst={i === 0} />
+        </div>
+      </section>
+    ))
+  }
 </Base>
-
-<style>
-  .groups {
-    display: grid;
-    gap: var(--s8);
-    padding-bottom: var(--section);
-  }
-  h2 {
-    font-size: var(--text-xl);
-  }
-</style>

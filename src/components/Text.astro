@@ -1,10 +1,14 @@
 ---
-// Renders copy and highlights any [square-bracket placeholder] so it can't slip through to launch.
+// Renders copy. Anything still in [square brackets] is a note for us, not for guests: it is dropped
+// so a placeholder can never reach the live site. Search the data files for "[" to find what's left.
 interface Props {
   text: string;
 }
 
-const parts = Astro.props.text.split(/(\[[^\]]+\])/).filter(Boolean);
+const text = Astro.props.text
+  .replace(/\s*\[[^\]]*\]/g, '')
+  .replace(/\s+([.,])/g, '$1')
+  .trim();
 ---
 
-{parts.map((part) => (part.startsWith('[') ? <span class="todo">{part}</span> : part))}
+{text}

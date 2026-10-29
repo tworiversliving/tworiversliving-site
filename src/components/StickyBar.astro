@@ -1,23 +1,39 @@
 ---
-// Phone-only floating booking pill (BRIEF.md 2.5). Fades in once the element matched by `after`
-// has scrolled out of view. Hidden from 900px, where the header carries "Check dates".
+// Phone-only booking bar (BRIEF.md 2.5). Hidden from 900px.
+//   float (homepage): forest pill that fades in once the element matched by `after` has scrolled out of view.
+//   bar (property page): full-width paper bar with a top rule, always shown.
+import { booking } from '../config/booking';
+
 interface Props {
-  /** Nightly "from" price in pounds. */
+  /** Nightly "from" price in pounds. Pages with a booking card replace it with the live price. */
   price: number;
   href: string;
-  /** Selector for the element the bar waits to scroll past, e.g. the hero. */
-  after: string;
+  variant?: 'float' | 'bar';
+  /** Float only: selector for the element the bar waits to scroll past, e.g. the hero. */
+  after?: string;
 }
 
-const { price, href, after } = Astro.props;
+const { price, href, variant = 'float', after } = Astro.props;
+const float = variant === 'float';
 ---
 
-<tr-sticky-bar class="sticky-bar" data-after={after} inert>
-  <p class="sticky-bar__price">
-    <span class="sticky-bar__from">From</span>
-    <span>£{price} a night</span>
-  </p>
-  <a href={href} class="button button--paper" data-open-dates>Check dates</a>
+<tr-sticky-bar class:list={['sticky-bar', `sticky-bar--${variant}`]} data-after={after} inert={float || undefined}>
+  {
+    float ? (
+      <p class="sticky-bar__price">
+        <span class="sticky-bar__from">From</span>
+        <span>£{price} a night</span>
+      </p>
+    ) : (
+      <p class="sticky-bar__price">
+        <span>
+          <span data-from-price>£{price}</span> a night
+        </span>
+        <span class="sticky-bar__from">No fees · Free cancellation {booking.freeCancellationDays} days</span>
+      </p>
+    )
+  }
+  <a href={href} class:list={['button', { 'button--paper': float }]} data-open-dates>Check dates</a>
 </tr-sticky-bar>
 
 <script>
@@ -25,7 +41,8 @@ const { price, href, after } = Astro.props;
     observer?: IntersectionObserver;
 
     connectedCallback() {
-      const target = document.querySelector(this.dataset.after ?? '');
+      if (!this.dataset.after) return;
+      const target = document.querySelector(this.dataset.after);
       if (!target) return;
       this.observer = new IntersectionObserver(([entry]) => {
         // Shown only once the target is above the viewport, not while it is still below
@@ -70,6 +87,31 @@ const { price, href, after } = Astro.props;
     visibility: visible;
     transform: none;
     transition: opacity 0.2s, transform 0.2s;
+  }
+
+  /* Property page: full width, paper, always there */
+  .sticky-bar--bar {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 10px max(var(--gutter), env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 -6px 20px rgb(29 34 27 / 0.08);
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+  .sticky-bar--bar .sticky-bar__from {
+    font-size: 0.6875rem;
+    text-wrap: balance;
+    color: var(--forest-soft);
+  }
+  .sticky-bar .button {
+    flex: none;
+    white-space: nowrap;
   }
 
   .sticky-bar__price {

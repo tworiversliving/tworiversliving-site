@@ -2,13 +2,17 @@
 import Base from '../../layouts/Base.astro';
 import BookingPanel from '../../components/BookingPanel.astro';
 import Photo from '../../components/ui/Photo.astro';
+import Label from '../../components/ui/Label.astro';
+import Schedule from '../../components/ui/Schedule.astro';
 import Reviews from '../../components/Reviews.astro';
-import Text from '../../components/Text.astro';
 import AreaMap from '../../components/AreaMap.astro';
 import PhotoCard from '../../components/PhotoCard.astro';
 import PhotoCarousel from '../../components/ui/PhotoCarousel.astro';
-import { booking } from '../../config/booking';
+import StickyBar from '../../components/StickyBar.astro';
+import { booking, extras } from '../../config/booking';
+import { site } from '../../config/site';
 import { properties, ratingLine, type Property } from '../../data/properties';
+import { todo } from '../../data/todo';
 import { schemaImages } from '../../lib/og';
 import { lodging } from '../../lib/schema';
 
@@ -22,26 +26,65 @@ interface Props {
 
 const { property: p } = Astro.props;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-const specs = `${plural(p.guests, 'guest')} · ${plural(p.bedrooms, 'bedroom')} · ${plural(p.bathrooms, 'bathroom')}`;
+const facts = [plural(p.guests, 'guest'), plural(p.bedrooms, 'bedroom'), plural(p.bathrooms, 'bathroom'), p.floor];
+const postcode = p.postcodeArea.replace('London ', '');
 
-const rooms = [...new Set(p.photos.map((ph) => ph.room))];
-// Gallery photos: files that exist, no neighbourhood shots. A TV shot is never first.
+// Only photos whose files exist: a missing one would be a blank block in the gallery and the lightbox.
 const files = import.meta.glob('/src/assets/properties/**/*.{jpg,jpeg,png,webp,avif}');
-const pool = p.photos.filter((ph) => ph.room !== 'Neighbourhood' && `/src/assets/properties/${p.slug}/${ph.file}` in files);
-const hero = pool.find((ph) => ph.file === p.heroPhoto && !ph.tv) ?? pool.find((ph) => !ph.tv) ?? p.photos[0];
+const existing = p.photos.filter((ph) => `/src/assets/properties/${p.slug}/${ph.file}` in files);
+const rooms = [...new Set(existing.map((ph) => ph.room))];
+// Gallery photos: no neighbourhood shots. A TV shot is never first.
+const pool = existing.filter((ph) => ph.room !== 'Neighbourhood');
+const hero = pool.find((ph) => ph.file === p.heroPhoto && !ph.tv) ?? pool.find((ph) => !ph.tv) ?? pool[0];
 // One photo per room after the hero, so the desktop grid shows the whole flat rather than one room five times.
 const gallery = [hero, ...rooms.filter((r) => r !== hero.room).map((r) => pool.find((ph) => ph.room === r && !ph.tv)).filter((ph) => ph !== undefined)].slice(0, 5);
 // The phone carousel carries on through every other photo, TV shots last.
 const others = pool.filter((ph) => !gallery.includes(ph));
 const carousel = [...gallery, ...others.filter((ph) => !ph.tv), ...others.filter((ph) => ph.tv)];
-const photoFor = (file?: string) => p.photos.find((ph) => ph.file === file);
 const roomId = (room: string) => `photos-${room.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 // Each bedroom's own photos, with its main photo first
 const roomPhotos = (room: string, main?: string) => {
-  const all = p.photos.filter((ph) => ph.room === room);
+  const all = existing.filter((ph) => ph.room === room);
   return [...all.filter((ph) => ph.file === main), ...all.filter((ph) => ph.file !== main)];
 };
 const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.file)))];
+
+// '15:00' -> '3pm', '12:30' -> '12:30pm'
+const clock = (t: string) => {
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'am' : 'pm'}`;
+};
+const pounds = (pence: number) => `£${pence / 100}`;
+const extra = (id: string) => extras.find((e) => e.id === id && p.extras.includes(e.id));
+const parking = extra('parking');
+const early = extra('early_checkin');
+const late = extra('late_checkout');
+const extrasLine = [
+  early && `${early.label.replace(/\d\d:\d\d/, clock).toLowerCase()} (${pounds(early.price)})`,
+  late && `${late.label.replace(/\d\d:\d\d/, clock).toLowerCase()} (${pounds(late.price)})`,
+  parking && `a parking permit (${pounds(parking.price)}${todo.parkingBasis ? ` ${todo.parkingBasis}` : ''})`,
+].filter(Boolean);
+const listJoin = (items: unknown[]) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : String(items[0] ?? ''));
+
+const flatRows = [
+  { key: 'Wifi', value: todo.wifiSpeed ? `Throughout the flat, tested at ${todo.wifiSpeed}` : 'Throughout the flat' },
+  { key: 'Work', value: 'A desk and chair, away from the living room' },
+  { key: 'Kitchen', value: 'Oven and hob, fridge-freezer, microwave, kettle and toaster' },
+  { key: 'Dining', value: 'A table that seats everyone' },
+  { key: 'Laundry', value: 'Washing machine' },
+  { key: 'Living', value: 'Sofas and a TV' },
+  { key: 'Bedding', value: 'Bed linen and towels provided' },
+  { key: 'Parking', value: parking ? `Visitor permit for nearby resident bays, ${pounds(parking.price)}${todo.parkingBasis ? ` ${todo.parkingBasis}` : ''}` : '' },
+  { key: 'Bathroom', value: [p.bathrooms === 1 ? 'One bathroom' : plural(p.bathrooms, 'bathroom'), todo.showerOrBath.toLowerCase()].filter(Boolean).join(', ') },
+  { key: 'Hosts', value: `${site.hosts}, a few minutes away`, href: '/about' },
+];
+
+const distances = [...p.walkingTimes.map((w) => `${w.place} ${w.time}`), todo.busRoutes && `Buses ${todo.busRoutes}`].filter((d): d is string => Boolean(d));
+const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${p.area}, ${p.postcodeArea}`)}`;
+// Mono lines break between items, never inside one
+const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const dotted = (items: string[]) => items.map((t) => `<span class="nowrap">${esc(t)}</span>`).join(' · ');
+const rulesText = p.houseRules.map((r) => (/[.!?]$/.test(r) ? r : `${r}.`)).join(' ');
 ---
 
 <Base
@@ -54,155 +97,184 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
     { name: p.name, path: `/stays/${p.slug}` },
   ]}
 >
-  <div class="container top">
-    <PhotoCarousel
-      slug={p.slug}
-      photos={carousel}
-      label={`Photos of the ${p.name.toLowerCase()}`}
-      ratio="4/3"
-      sizes="(min-width: 960px) 640px, 100vw"
-      eager
-      rounded
-      class="gallery"
-    >
-      <button type="button" class="button gallery__all" data-open-photos>View all photos</button>
-    </PhotoCarousel>
-  </div>
+  <div class="stay">
+    <div class="container top">
+      <PhotoCarousel
+        slug={p.slug}
+        photos={carousel}
+        label={`Photos of the ${p.name.toLowerCase()}`}
+        ratio="4/5"
+        sizes="(min-width: 900px) 640px, 100vw"
+        eager
+        class="gallery"
+      >
+        <a href="/" class="gallery__back" aria-label="Back" data-back>
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
+        </a>
+        <button type="button" class="gallery__all" data-open-photos>All {existing.length} photos</button>
+      </PhotoCarousel>
+    </div>
 
-  <div class="container layout">
-    <div class="content">
-      <header class="title">
-        <span class="kicker">{p.area}</span>
-        <h1>{p.name}</h1>
-        <p class="muted">
-          {specs} · {p.beds}
-          {p.reviews.length > 0 && <> · <a href="#reviews">{plural(p.reviews.length, 'review')}</a></>}
-        </p>
-        {p.ratings.length > 0 && <p class="mono rated">Rated {ratingLine(p)}</p>}
-      </header>
+    <div class="container layout">
+      <div class="content">
+        <header class="title">
+          <Label>{p.street} · {postcode}</Label>
+          <h1>
+            {p.headline.map((line, i) => (
+              <span class:list={['title__line', { worn: i === 1 }]}>
+                {/* Never break inside "three-bedroom" */}
+                {line.split(' ').map((w, j) => <>{j > 0 && ' '}{w.includes('-') ? <span class="nowrap">{w}</span> : w}</>)}
+              </span>
+            ))}
+          </h1>
+          <p class="title__facts"><Fragment set:html={dotted(facts)} /></p>
+          {
+            p.ratings.length > 0 && (
+              <p class="title__rated">
+                <Fragment set:html={dotted(ratingLine(p).split(' · ').map((r, i) => (i === 0 ? `Rated ${r}` : r)))} />
+                {p.reviews.length > 0 && <> · <a href="#reviews">{plural(p.reviews.length, 'review')}</a></>}
+              </p>
+            )
+          }
+          <div class="title__intro">
+            {p.overview.slice(0, 2).map((para) => <p>{para}</p>)}
+          </div>
+        </header>
 
-      <section class="block">
-        {p.overview.map((para) => <p>{para}</p>)}
-      </section>
-
-      <section class="block sleep" aria-labelledby="sleep">
-        <h2 id="sleep">Where you'll sleep</h2>
-        <div class="rooms">
-          {p.sleeping.map((r) => <PhotoCard slug={p.slug} title={r.room} meta={r.bed} photos={roomPhotos(r.room, r.photo)} viewerId={roomId(r.room)} />)}
-        </div>
-      </section>
-
-      <section class="block" aria-labelledby="amenities">
-        <h2 id="amenities">What's in the flat</h2>
-        <ul class="ticks cols">
-          {p.amenities.top.map((a) => <li>{a}</li>)}
-        </ul>
-        <details class="all">
-          <summary class="text-link">Show all amenities</summary>
-          <div class="all__groups">
+        <section class="block sleep" aria-labelledby="sleep">
+          <h2 id="sleep">Where you'll sleep</h2>
+          <div class="rooms">
             {
-              Object.entries(p.amenities.all).map(([group, items]) => (
-                <div>
-                  <h3>{group}</h3>
-                  <ul class="ticks">
-                    {items.map((a) => (
-                      <li>{a}</li>
-                    ))}
-                  </ul>
-                </div>
+              p.sleeping.map((r) => (
+                <PhotoCard
+                  slug={p.slug}
+                  title={r.room}
+                  meta={r.bed}
+                  photos={roomPhotos(r.room, r.photo)}
+                  viewerId={roomId(r.room)}
+                  sizes="(min-width: 900px) 260px, 62vw"
+                />
               ))
             }
           </div>
-        </details>
-      </section>
+        </section>
 
-      <section class="block" aria-labelledby="working">
-        <h2 id="working">Working here</h2>
-        <ul class="ticks">
-          {p.working.map((w) => <li><Text text={w} /></li>)}
-        </ul>
-        <p><a class="text-link" href="/work-stays">Work and long stays</a></p>
-      </section>
+        <section class="block" aria-labelledby="amenities">
+          <h2 id="amenities">What's in the flat</h2>
+          <Schedule rows={flatRows} columns={2} class="amenities" />
+          <p class="block__more"><a class="text-link" href="/work-stays">Work and long stays</a></p>
+        </section>
 
-      <section class="block" aria-labelledby="location">
-        <h2 id="location">Location</h2>
-        <p>
-          {p.area}, {p.postcodeArea}. We send the exact address 48 hours before you arrive.
-        </p>
-        <AreaMap property={p} />
-        <dl class="times">
+        <section class="block" aria-labelledby="arriving">
+          <h2 id="arriving">Arriving and leaving</h2>
+          <dl class="arrive">
+            <div>
+              <dt>Check-in</dt>
+              <dd class="arrive__time">{clock(booking.checkInTime)}</dd>
+            </div>
+            <div>
+              <dt>Checkout</dt>
+              <dd class="arrive__time">{clock(booking.checkOutTime)}</dd>
+            </div>
+            <div class="arrive__text">
+              <dt>Entry</dt>
+              <dd>Self check-in, keys in a lockbox</dd>
+            </div>
+            <div class="arrive__text">
+              <dt>Access</dt>
+              <dd>Top floor, stairs to the front door, no lift</dd>
+            </div>
+          </dl>
+          <p class="arrive__sentence">Self check-in with keys in a lockbox. The flat is on the top floor, up a flight of stairs with no lift.</p>
+          <p class="body">We send the address and the lockbox code 48 hours before you arrive.</p>
           {
-            p.walkingTimes.map((w) => (
-              <div>
-                <dt>{w.place}</dt>
-                <dd>{w.time}</dd>
-              </div>
-            ))
+            extrasLine.length > 0 && (
+              <p class="body">
+                You can add {listJoin(extrasLine)} when you book. Early check-in and late checkout depend on the nights either side being free.
+              </p>
+            )
           }
-        </dl>
-        <p><a class="text-link" href={`/areas/${p.areaSlug}`}>Our {p.area} guide</a></p>
-      </section>
+        </section>
 
-      <section class="block" aria-labelledby="rules">
-        <h2 id="rules">Check-in and house rules</h2>
-        <p>Self check-in with a key lockbox. We send the details 48 hours before you arrive.</p>
-        <ul class="ticks">
-          {p.houseRules.map((r) => <li>{r}</li>)}
-        </ul>
-        <p><a href="/house-rules">Full house rules</a></p>
-      </section>
+        <section class="block" aria-labelledby="rules">
+          <h2 id="rules">House rules</h2>
+          <p class="body">{rulesText}</p>
+          <p class="block__more"><a class="text-link" href="/house-rules">Full house rules</a></p>
+        </section>
 
-      <section class="block" aria-labelledby="know">
-        <h2 id="know">Good to know</h2>
-        <ul class="ticks">
-          {p.goodToKnow.map((g) => <li>{g}</li>)}
-        </ul>
-      </section>
+        <section class="block" aria-labelledby="know">
+          <h2 id="know">Good to know</h2>
+          <ul class="known">
+            {p.goodToKnow.map((g) => <li>{g}</li>)}
+          </ul>
+        </section>
 
-      <section class="block" aria-labelledby="cancel">
-        <h2 id="cancel">Cancellation</h2>
-        <p>
-          Full refund if you cancel more than {booking.freeCancellationDays} days before check-in. <a href="/terms">Booking terms</a>
-        </p>
-      </section>
+        <section class="block" aria-labelledby="cancel">
+          <h2 id="cancel">Cancellation</h2>
+          <p class="body">
+            Full refund if you cancel more than {booking.freeCancellationDays} days before check-in.
+            {todo.lateCancellation && <>{todo.lateCancellation} </>}
+            <a href="/terms">Booking terms</a>
+          </p>
+        </section>
 
-      {
-        p.reviews.length > 0 && (
-          <section class="block" id="reviews" aria-labelledby="reviews-title">
-            <h2 id="reviews-title">Reviews</h2>
-            <Reviews reviews={p.reviews} />
-          </section>
-        )
-      }
+        <section class="block" aria-labelledby="location">
+          <h2 id="location">Where it is</h2>
+          <p class="body">
+            {p.area}, {p.postcodeArea}. {p.overview[2]} We send the exact address 48 hours before you arrive.
+          </p>
+          <AreaMap property={p} href={mapsHref} />
+          <p class="distances"><Fragment set:html={dotted(distances)} /></p>
+          <p class="block__more"><a class="text-link" href={`/areas/${p.areaSlug}`}>Our {p.area} guide</a></p>
+        </section>
+
+        {
+          p.reviews.length > 0 && (
+            <section class="block" id="reviews" aria-labelledby="reviews-title">
+              <h2 id="reviews-title">Reviews</h2>
+              <Reviews reviews={p.reviews} />
+            </section>
+          )
+        }
+      </div>
+
+      <BookingPanel property={p} />
     </div>
-
-    <BookingPanel property={p} />
   </div>
 
-  <div class="mobile-bar">
-    <p>From <strong data-from-price>£{p.fromPriceFallback}</strong> a night</p>
-    <a class="button" href="#book" data-open-dates>Check dates</a>
-  </div>
+  <StickyBar variant="bar" price={p.fromPriceFallback} href="#book" />
 
-  <dialog class="viewer" data-photos aria-label="All photos">
-    <div class="viewer__head container">
-      <p class="display">{p.name}</p>
-      <button type="button" class="button button--ghost" data-close-photos>Close</button>
+  <dialog class="viewer" data-photos aria-labelledby="viewer-title">
+    <div class="viewer__head">
+      <div class="container viewer__bar">
+        <p class="viewer__title" id="viewer-title">All {existing.length} photos</p>
+        <nav class="viewer__rooms" aria-label="Rooms">
+          {rooms.map((room) => <a href={`#${roomId(room)}`} data-room>{room}</a>)}
+        </nav>
+        <button type="button" class="viewer__close" aria-label="Close photos" data-close-photos>
+          <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" /></svg>
+        </button>
+      </div>
     </div>
     <div class="container">
       {
-        rooms.map((room) => (
-          <section class="viewer__room" id={roomId(room)}>
-            <h2>{room}</h2>
-            <div class="viewer__grid">
-              {p.photos
-                .filter((ph) => ph.room === room)
-                .map((ph) => (
-                  <Photo slug={p.slug} file={ph.file} alt={ph.alt} sizes="(min-width: 960px) 600px, 100vw" />
+        rooms.map((room) => {
+          // TV shots after the others, so the lightbox never opens on one
+          const inRoom = existing.filter((ph) => ph.room === room);
+          const shots = [...inRoom.filter((ph) => !ph.tv), ...inRoom.filter((ph) => ph.tv)];
+          return (
+            <section class="viewer__room" id={roomId(room)} aria-labelledby={`${roomId(room)}-h`}>
+              <h2 class="viewer__h" id={`${roomId(room)}-h`}>
+                {room} <span class="viewer__n">{plural(shots.length, 'photo')}</span>
+              </h2>
+              <div class="viewer__grid">
+                {shots.map((ph) => (
+                  <Photo slug={p.slug} file={ph.file} alt={ph.alt} ratio="auto" sizes="(min-width: 900px) 520px, 100vw" />
                 ))}
-            </div>
-          </section>
-        ))
+              </div>
+            </section>
+          );
+        })
       }
     </div>
   </dialog>
@@ -210,40 +282,106 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
 
 <script>
   const viewer = document.querySelector<HTMLDialogElement>('[data-photos]');
-  // A room card's button opens the viewer at that room
+  // "All photos" opens at the top; a room card's button opens at that room
   document.querySelectorAll<HTMLElement>('[data-open-photos]').forEach((btn) =>
     btn.addEventListener('click', () => {
-      viewer?.showModal();
+      if (!viewer) return;
+      viewer.showModal();
       const room = btn.dataset.openPhotos && document.getElementById(btn.dataset.openPhotos);
-      room ? room.scrollIntoView({ block: 'start' }) : viewer?.scrollTo(0, 0);
+      room ? room.scrollIntoView({ block: 'start' }) : viewer.scrollTo(0, 0);
     }),
   );
   document.querySelector('[data-close-photos]')?.addEventListener('click', () => viewer?.close());
+  // Room links scroll inside the dialog without touching the address bar
+  viewer?.querySelectorAll<HTMLAnchorElement>('[data-room]').forEach((a) =>
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById(a.hash.slice(1))?.scrollIntoView({ block: 'start' });
+    }),
+  );
+
+  // Back goes back when the guest came from this site, otherwise home
+  document.querySelector('[data-back]')?.addEventListener('click', (e) => {
+    if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) {
+      e.preventDefault();
+      history.back();
+    }
+  });
 </script>
 
 <style>
-  .top {
-    padding-top: calc(var(--header-h) + var(--s3));
+  .stay {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .stay h1,
+  .stay h2 {
+    color: var(--forest);
   }
 
-  /* Phones and tablets: the rounded carousel through every photo. From 960px the same track becomes
-     the 2fr 1fr 1fr grid of the first five (the photos are 1086px wide, too small to fill the page alone). */
+  /* 1. Gallery. Phones: a full-width swipe row at 4:5, back button and counter over it.
+     From 900px the same track becomes the 2fr 1fr 1fr grid of the first five, every cell filled. */
+  .top {
+    padding-top: var(--header-h);
+  }
+  @media (max-width: 899.98px) {
+    .top {
+      padding-inline: 0;
+    }
+  }
+
+  .gallery__back,
   .gallery__all {
     position: absolute;
-    right: 12px;
-    bottom: 12px;
-    min-height: 40px;
-    padding-block: 8px;
-    border-color: var(--paper);
+    z-index: 1;
     background: var(--paper);
     color: var(--forest);
   }
-  .gallery__all:hover {
-    border-color: var(--mist);
-    background: var(--mist);
-    color: var(--ink);
+  .gallery__back {
+    top: 12px;
+    left: max(12px, env(safe-area-inset-left));
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
   }
-  @media (min-width: 960px) {
+  .gallery__all {
+    bottom: 12px;
+    left: 12px;
+    min-height: 36px;
+    padding: 6px 16px;
+    border: 0;
+    border-radius: var(--r-pill);
+    font: inherit;
+    font-size: var(--t-small);
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .gallery__all:hover {
+    background: var(--forest);
+    color: var(--paper);
+  }
+  .top :global(.gallery .carousel__count) {
+    top: auto;
+    bottom: 12px;
+    padding: 6px 12px;
+  }
+
+  @media (min-width: 900px) {
+    .top {
+      padding-top: calc(var(--header-h) + var(--s3));
+    }
+    .gallery__back {
+      display: none;
+    }
+    .gallery__all {
+      left: auto;
+      right: 16px;
+      bottom: 16px;
+      min-height: 44px;
+      padding: 10px 20px;
+    }
     .top :global(.gallery .carousel__track) {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr;
@@ -268,41 +406,91 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
     }
   }
 
+  /* 2. Body and booking card */
   .layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--s6);
     padding-block: var(--s5) var(--section);
   }
-  @media (min-width: 960px) {
+  @media (min-width: 900px) {
     .layout {
-      grid-template-columns: minmax(0, 1fr) 360px;
-      gap: var(--s8);
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: var(--s6);
+      padding-top: var(--s8);
+    }
+  }
+  @media (min-width: 1100px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 80px;
     }
   }
 
-  .rated {
+  .title h1 {
+    margin-bottom: var(--s3);
+  }
+  .title__line {
+    display: block;
+  }
+  .nowrap,
+  .stay :global(.nowrap) {
+    white-space: nowrap;
+  }
+  .title__facts,
+  .title__rated,
+  .distances {
     margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .title__facts {
+    padding-top: 12px;
+    border-top: 1px solid var(--line-strong);
+    color: var(--ink);
+  }
+  .title__rated {
+    margin-top: 6px;
     color: var(--forest-soft);
   }
-
-  .title h1 {
-    font-size: var(--text-2xl);
+  .title__intro {
+    max-width: var(--measure);
+    margin-top: var(--s4);
+    color: var(--text-2);
+  }
+  @media (min-width: 900px) {
+    .title__intro {
+      font-size: var(--t-lead);
+    }
   }
 
   .block {
-    padding-block: var(--s5);
+    margin-top: var(--s5);
+    padding-top: var(--s5);
     border-top: 1px solid var(--line);
   }
   .block h2 {
-    font-size: var(--text-xl);
+    margin-bottom: var(--s3);
+    font-size: var(--t-h3);
+    line-height: 1.1;
   }
-  .title + .block {
-    border-top: 0;
+  .body {
+    max-width: var(--measure);
+  }
+  .block__more {
+    margin: var(--s2) 0 0;
+  }
+  @media (min-width: 900px) {
+    .block {
+      margin-top: var(--s6);
+      padding-top: var(--s6);
+    }
   }
 
-  /* A swipe row of cards running to the screen edge, the next one peeking. Three columns once the content column
-     is 720px wide, so a narrow desktop never leaves one card on a row of its own. */
+  /* Where you'll sleep: the room cards as plain 4:5 tiles, swiping at 62% on phones */
   .sleep {
     container-type: inline-size;
   }
@@ -320,10 +508,10 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
     display: none;
   }
   .rooms > :global(*) {
-    flex: 0 0 min(84%, 300px);
+    flex: 0 0 62%;
     scroll-snap-align: start;
   }
-  @container (min-width: 720px) {
+  @container (min-width: 600px) {
     .rooms {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -333,72 +521,100 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
       overflow: visible;
     }
   }
-
-  @media (min-width: 640px) {
-    .cols {
-      columns: 2;
-      column-gap: var(--s4);
-    }
-    .cols li {
-      break-inside: avoid;
-    }
+  .rooms :global(.photo-card) {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+  .rooms :global(.photo-card .photo) {
+    aspect-ratio: 4 / 5 !important;
+  }
+  .rooms :global(.photo-card__body) {
+    padding: 14px 0 0;
+  }
+  .rooms :global(.photo-card__name) {
+    font-size: 1.5rem;
+  }
+  .rooms :global(.photo-card__bed) {
+    margin-bottom: 12px;
+  }
+  .rooms :global(.photo-card__foot) {
+    padding-top: 4px;
   }
 
-  .all summary {
-    cursor: pointer;
-    text-decoration: underline;
+  /* What's in the flat: two columns of the schedule, keys narrower than the page default */
+  .stay :global(.amenities) {
+    --key-w: 96px;
   }
-  .all__groups {
+
+  /* Arriving and leaving: cells between forest rules */
+  .arrive {
     display: grid;
-    gap: var(--s3);
-    margin-top: var(--s3);
+    grid-template-columns: 1fr 1fr;
+    margin: 0 0 var(--s3);
+    border-block: 1px solid var(--line-strong);
   }
-  @media (min-width: 640px) {
-    .all__groups {
-      grid-template-columns: 1fr 1fr;
-    }
+  .arrive div {
+    padding: 14px 16px 16px 0;
   }
-  .all h3 {
-    font-size: 1rem;
-    margin-bottom: var(--s1);
+  .arrive div + div {
+    padding-left: 16px;
+    border-left: 1px solid var(--line);
   }
-
-  .times {
-    margin: 0 0 var(--s2);
-  }
-  .times div {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--s2);
-    padding: var(--s1) 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .times dd {
-    margin: 0;
+  .arrive dt {
+    margin-bottom: 6px;
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     color: var(--forest-soft);
   }
-
-  .mobile-bar {
-    position: sticky;
-    bottom: 0;
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--s2);
-    padding: var(--s1) var(--gutter);
-    background: var(--paper);
-    border-top: 1px solid var(--line);
-  }
-  .mobile-bar p {
+  .arrive dd {
     margin: 0;
   }
-  @media (min-width: 960px) {
-    .mobile-bar {
+  .arrive__time {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--forest);
+  }
+  .arrive__text {
+    display: none;
+  }
+  @media (min-width: 900px) {
+    .arrive {
+      grid-template-columns: 0.8fr 0.8fr 1fr 1.2fr;
+    }
+    .arrive__text {
+      display: block;
+    }
+    .arrive__sentence {
       display: none;
     }
   }
 
+  /* Good to know: ruled rows like a schedule, without keys */
+  .known {
+    max-width: 44em;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--line-strong);
+  }
+  .known li {
+    padding-block: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .distances {
+    color: var(--forest-soft);
+  }
+  .stay :global(.map) {
+    margin-bottom: var(--s2);
+  }
+
+  /* Lightbox */
   .viewer {
     width: 100%;
     max-width: none;
@@ -407,40 +623,110 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
     margin: 0;
     padding: 0 0 var(--s8);
     border: 0;
-    background: var(--mist);
-    color: var(--forest);
+    background: var(--paper);
+    color: var(--ink);
+    overscroll-behavior: contain;
   }
   .viewer::backdrop {
-    background: var(--mist);
+    background: var(--paper);
+  }
+  :global(html:has(.viewer[open])) {
+    overflow: hidden;
   }
   .viewer__head {
     position: sticky;
     top: 0;
     z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-block: var(--s2);
-    background: var(--mist);
+    background: var(--paper);
     border-bottom: 1px solid var(--line);
   }
-  .viewer__head p {
+  .viewer__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    min-height: 68px;
+  }
+  .viewer__title {
     margin: 0;
-    font-size: var(--text-lg);
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--forest);
+  }
+  .viewer__rooms {
+    display: none;
+  }
+  .viewer__close {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-left: auto;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--forest);
+    cursor: pointer;
+  }
+  .viewer__close:hover {
+    border-color: var(--forest);
   }
   .viewer__room {
     padding-top: var(--s5);
+    scroll-margin-top: 69px;
   }
-  .viewer__room h2 {
-    font-size: var(--text-xl);
+  .viewer__h {
+    margin-bottom: var(--s2);
+    font-size: var(--t-h3);
+    line-height: 1.1;
+    color: var(--forest);
+  }
+  .viewer__n {
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    color: var(--forest-soft);
+    vertical-align: middle;
   }
   .viewer__grid {
     display: grid;
-    gap: var(--s2);
+    gap: 10px;
   }
-  @media (min-width: 768px) {
+  @media (min-width: 900px) {
+    .viewer__rooms {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 18px;
+      font-family: var(--font-mono);
+      font-size: var(--t-mono);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .viewer__rooms a {
+      color: var(--forest-soft);
+      text-decoration: none;
+    }
+    .viewer__rooms a:hover {
+      color: var(--forest);
+      text-decoration: underline;
+    }
+    .viewer__room {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: var(--s4);
+      padding-top: var(--s6);
+    }
+    .viewer__h {
+      position: sticky;
+      top: calc(68px + var(--s3));
+      align-self: start;
+    }
+    .viewer__n {
+      display: block;
+      margin-top: 8px;
+    }
     .viewer__grid {
       grid-template-columns: 1fr 1fr;
+      align-items: start;
     }
   }
 </style>

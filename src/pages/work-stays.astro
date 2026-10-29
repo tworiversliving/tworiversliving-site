@@ -1,14 +1,28 @@
 ---
 import Base from '../layouts/Base.astro';
 import Photo from '../components/ui/Photo.astro';
+import Button from '../components/ui/Button.astro';
+import Schedule from '../components/ui/Schedule.astro';
 import Accordion from '../components/ui/Accordion.astro';
 import EnquiryForm from '../components/EnquiryForm.astro';
-import Text from '../components/Text.astro';
+import { booking } from '../config/booking';
 import { properties } from '../data/properties';
 import { faqGroups } from '../data/faq';
+import { todo } from '../data/todo';
 
 const p = properties[0];
-const doors = p.photos.find((ph) => ph.file === 'bedroom-doors.jpg') ?? p.photos.find((ph) => ph.room === 'Workspace');
+const photo = (file: string) => ({ file, alt: p.photos.find((ph) => ph.file === file)?.alt ?? '' });
+const workspace = photo('workspace.jpg');
+const kitchen = photo('kitchen.jpg');
+
+const terms = [
+  { key: 'Whole flat', value: 'One booker, one agreement' },
+  { key: 'Invoices', value: 'In your company name' },
+  { key: 'Bills', value: 'Included' },
+  { key: 'Minimum', value: `${booking.maxInstantNights + 1} nights` },
+  { key: 'Maximum', value: `${booking.maxNights} nights` },
+  { key: 'Reply', value: 'Within a few hours, 8am to 10pm' },
+];
 
 const audiences = [
   { who: 'Contractors and site teams', line: 'Three private rooms under one roof, with a kitchen to cook in after a long day.' },
@@ -20,19 +34,14 @@ const audiences = [
 const included = [
   'The whole flat, with one booker and one agreement',
   'Three private double bedrooms',
-  'A desk and chair, with wifi throughout [add measured speed]',
+  todo.wifiSpeed ? `A desk and chair, with wifi throughout tested at ${todo.wifiSpeed}` : 'A desk and chair, with wifi throughout',
   'Full kitchen and a washing machine',
   'Bills included',
   'Cleaning and fresh linen as often as you need',
   'Parking permit available',
 ];
 
-const steps = [
-  'Send your dates and headcount.',
-  'Get a quote for the whole stay.',
-  'Pay by card or invoice.',
-  'Check yourself in with the lockbox.',
-];
+const steps = ['Send your dates and headcount.', 'Get a quote for the whole stay.', 'Pay by card or invoice.', 'Check yourself in with the lockbox.'];
 
 const bookerFaq = [
   { q: 'Are there stairs?', a: 'Yes. The front door is up a flight of stairs and there is no lift.' },
@@ -44,126 +53,161 @@ const bookerFaq = [
 <Base
   title="Work and long stays"
   description="A whole three-bedroom flat in Stoke Newington for contractors, placements and crews. Longer stays on request, invoiced to your company."
-  ogPhoto={{ slug: properties[0].slug, file: 'bedroom-1.jpg' }}
+  ogPhoto={{ slug: p.slug, file: 'bedroom-1.jpg' }}
 >
-  <section class="hero container">
-    <div class="hero__text">
-      <span class="kicker">Work and long stays</span>
-      <h1>A base for work in North London.</h1>
-      <p class="lead">The whole flat, three private bedrooms, for longer stays on request.</p>
-      <a href="#quote" class="button">Request a quote</a>
-    </div>
-    <Photo slug={p.slug} file={doors?.file} alt={doors?.alt ?? ''} eager sizes="(min-width: 960px) 600px, 100vw" />
+  <section class="container page-head work-head">
+    <p class="label">Work and long stays</p>
+    <h1>
+      <span>Three bedrooms in N16,</span>
+      <span class="worn">ready for your team.</span>
+    </h1>
+    <p>The whole flat, three private bedrooms, for longer stays on request.</p>
+    <Button href="#quote">Request a quote</Button>
   </section>
 
-  <section class="section">
-    <div class="container">
-      <h2>Who it's for</h2>
-      <ul class="who">
-        {
-          audiences.map((a) => (
-            <li>
-              <h3>{a.who}</h3>
-              <p class="muted">{a.line}</p>
-            </li>
-          ))
-        }
-      </ul>
+  <section class="section section--ruled" aria-labelledby="terms-title">
+    <div class="container split">
+      <h2 id="terms-title">The terms</h2>
+      <Schedule rows={terms} />
     </div>
   </section>
 
-  <section class="section">
-    <div class="container grid-2">
+  <section class="section" aria-labelledby="who-title">
+    <div class="container who">
+      <Photo slug={p.slug} file={workspace.file} alt={workspace.alt} ratio="4/5" sizes="(min-width: 900px) 440px, 100vw" class="who__photo" />
       <div>
-        <h2>What's included</h2>
+        <h2 id="who-title">Who it's for</h2>
+        <ul class="who__list">
+          {
+            audiences.map((a) => (
+              <li>
+                <h3>{a.who}</h3>
+                <p>{a.line}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-label="What's included and how it works">
+    <div class="container two">
+      <div>
+        <h2 class="h3">What's included</h2>
         <ul class="ticks">
-          {included.map((i) => <li><Text text={i} /></li>)}
+          {included.map((i) => <li>{i}</li>)}
         </ul>
       </div>
       <div>
-        <h2>How it works</h2>
+        <h2 class="h3">How it works</h2>
         <ol class="steps">
-          {steps.map((s) => <li><Text text={s} /></li>)}
+          {steps.map((s) => <li>{s}</li>)}
         </ol>
       </div>
     </div>
+    <div class="container">
+      <Photo slug={p.slug} file={kitchen.file} alt={kitchen.alt} ratio="16/7" sizes="(min-width: 1280px) 1280px, 100vw" class="wide" />
+    </div>
   </section>
 
-  <section class="section section--paper" id="quote">
-    <div class="container narrow">
-      <span class="kicker">Request a quote</span>
-      <h2>Tell us what you need</h2>
-      <p class="muted">We'll come back to you quickly with a price for the whole stay.</p>
+  <section class="section section--mist" id="quote" aria-labelledby="quote-title">
+    <div class="container split">
+      <div>
+        <h2 id="quote-title">Tell us what you need</h2>
+        <p class="lead">We'll come back to you quickly with a price for the whole stay.</p>
+      </div>
       <EnquiryForm type="work" />
     </div>
   </section>
 
-  <section class="section">
-    <div class="container narrow">
-      <h2>Questions from bookers</h2>
+  <section class="section" aria-labelledby="faq-title">
+    <div class="container split">
+      <h2 id="faq-title">Questions from bookers</h2>
       <Accordion items={bookerFaq} />
     </div>
   </section>
 </Base>
 
 <style>
-  .hero {
-    display: grid;
-    gap: var(--s5);
-    align-items: center;
-    padding-top: calc(var(--header-h) + var(--s6));
+  .work-head h1 {
+    max-width: none;
   }
-  @media (min-width: 960px) {
-    .hero {
-      grid-template-columns: 1fr 1fr;
-      gap: var(--s8);
-    }
+  .work-head h1 span {
+    display: block;
   }
-  .hero h1 {
-    font-size: var(--text-3xl);
+  .work-head p:not(.label) {
+    margin-bottom: var(--s4);
   }
 
   .who {
     display: grid;
-    gap: var(--s4);
+    gap: var(--s5);
+  }
+  .who__list {
     margin: 0;
     padding: 0;
     list-style: none;
+    border-top: 1px solid var(--line-strong);
   }
-  @media (min-width: 768px) {
+  .who__list li {
+    padding-block: var(--s3);
+    border-bottom: 1px solid var(--line);
+  }
+  .who__list h3 {
+    margin-bottom: 4px;
+    font-size: var(--t-body);
+    color: var(--ink);
+  }
+  .who__list p {
+    max-width: 30em;
+    margin: 0;
+    color: var(--text-3);
+  }
+  @media (min-width: 900px) {
     .who {
-      grid-template-columns: repeat(2, 1fr);
-      gap: var(--s4) var(--s6);
+      grid-template-columns: 5fr 7fr;
+      gap: var(--s8);
+      align-items: start;
     }
-  }
-  @media (min-width: 1100px) {
-    .who {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-  .who li {
-    padding-top: var(--s3);
-    border-top: 1px solid var(--brass);
   }
 
+  .two {
+    display: grid;
+    gap: var(--s6);
+  }
+  @media (min-width: 900px) {
+    .two {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--s8);
+    }
+  }
+  .two h2 {
+    margin-bottom: var(--s3);
+  }
   .steps {
     margin: 0;
     padding: 0;
     list-style: none;
     counter-reset: step;
+    border-top: 1px solid var(--line-strong);
   }
   .steps li {
     counter-increment: step;
     display: flex;
     gap: var(--s2);
-    padding-block: var(--s2);
+    padding-block: 12px;
     border-bottom: 1px solid var(--line);
   }
   .steps li::before {
-    content: counter(step);
-    font-family: var(--font-serif);
-    font-size: var(--text-lg);
+    content: counter(step, decimal-leading-zero);
+    min-width: 2em;
+    padding-top: 0.2em;
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
     color: var(--brass-deep);
-    min-width: 1.5em;
+  }
+  .wide {
+    margin-top: var(--s8);
   }
 </style>

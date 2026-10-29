@@ -2,6 +2,7 @@
 // add its photos to src/assets/properties/<slug>/ and its PMS id to SMOOBU_APARTMENT_IDS.
 
 import type { ExtraId } from '../config/booking';
+import { todo } from './todo';
 
 export interface Photo {
   /** File name inside src/assets/properties/<slug>/. Missing files show a labelled placeholder. */
@@ -33,6 +34,12 @@ export interface Property {
   area: string;
   areaSlug: string;
   postcodeArea: string;
+  /** Street for the label over the title, e.g. 'Stoke Newington High Street'. */
+  street: string;
+  /** Property page h1. The second half is set in Redaction 50, the page's one worn phrase. */
+  headline: [string, string];
+  /** e.g. 'Top floor', shown in the facts line under the title. */
+  floor: string;
   summary: string;
   guests: number;
   bedrooms: number;
@@ -66,6 +73,9 @@ export const properties: Property[] = [
     area: 'Stoke Newington',
     areaSlug: 'stoke-newington',
     postcodeArea: 'London N16',
+    street: 'Stoke Newington High Street',
+    headline: ['A three-bedroom flat,', 'a minute from Church Street.'],
+    floor: 'Top floor',
     summary: 'Three double bedrooms on Stoke Newington High Street, a minute from Church Street.',
     guests: 7,
     bedrooms: 3,
@@ -106,7 +116,7 @@ export const properties: Property[] = [
     },
     working: [
       'A dedicated desk and chair, away from the living room.',
-      'Wifi throughout the flat. [Add the measured speed, e.g. "80 Mbps tested in October 2026"].',
+      todo.wifiSpeed ? `Wifi throughout the flat, tested at ${todo.wifiSpeed}.` : 'Wifi throughout the flat.',
       'A washing machine and full kitchen, so longer stays are easy.',
     ],
     walkingTimes: [

@@ -14,7 +14,7 @@ const { property: p } = Astro.props;
 ---
 
 <aside class="panel" id="book" aria-label="Book this flat" data-panel data-slug={p.slug} data-max-instant={booking.maxInstantNights} data-max-nights={booking.maxNights}>
-  <p class="panel__price">From <strong data-from-price>£{p.fromPriceFallback}</strong> a night</p>
+  <p class="panel__price"><span class="panel__amount" data-from-price>£{p.fromPriceFallback}</span> a night, from</p>
 
   <DatePair context="book" align="end" class="panel__dates" />
 
@@ -28,20 +28,19 @@ const { property: p } = Astro.props;
   <dl class="breakdown" data-breakdown hidden></dl>
   <p class="error small" data-error role="alert" hidden></p>
 
-  <button type="button" class="button button--block" data-reserve disabled>Reserve</button>
-  <p class="small muted panel__note" data-under>You won't be charged until the next step.</p>
+  <button type="button" class="button button--block panel__reserve" data-reserve disabled>Reserve</button>
+  <p class="panel__note">
+    <span data-under>You won't be charged until the next step.</span>
+    <span data-long-note>Staying {booking.maxInstantNights + 1} nights or more? <a href="/work-stays#quote">Ask for a quote</a>.</span>
+  </p>
 
   <div data-fallback hidden>
-    <p class="small muted">We couldn't load the calendar just now. Email us your dates and we'll confirm the price.</p>
-    <a class="button button--block" href={`mailto:${site.email}?subject=${encodeURIComponent(`Dates for ${p.name}`)}`}>Email us your dates</a>
+    <p class="panel__note">We couldn't load the calendar just now. Email us your dates and we'll confirm the price.</p>
+    <a class="button button--block button--secondary" href={`mailto:${site.email}?subject=${encodeURIComponent(`Dates for ${p.name}`)}`}>Email us your dates</a>
   </div>
   <noscript>
-    <p class="small muted">Turn on JavaScript to see live dates, or email us at <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+    <p class="panel__note">Turn on JavaScript to see live dates, or email us at <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
   </noscript>
-
-  <p class="small muted panel__note">
-    Staying {booking.maxInstantNights + 1} nights or more? <a href="/work-stays#quote">Ask for a quote</a>.
-  </p>
 </aside>
 
 <script>
@@ -72,6 +71,7 @@ const { property: p } = Astro.props;
     const errorEl = $('[data-error]');
     const reserve = $<HTMLButtonElement>('[data-reserve]');
     const under = $('[data-under]');
+    const longNote = $('[data-long-note]');
     let quoteSeq = 0;
     let target = '';
 
@@ -100,6 +100,7 @@ const { property: p } = Astro.props;
       reserve.disabled = true;
       reserve.textContent = 'Reserve';
       under.textContent = "You won't be charged until the next step.";
+      longNote.hidden = false;
       const seq = ++quoteSeq;
       if (!checkIn || !checkOut) return;
       const params = new URLSearchParams({ checkIn, checkOut, guests: String(guests) });
@@ -109,6 +110,7 @@ const { property: p } = Astro.props;
       if (n > maxInstant) {
         reserve.textContent = 'Ask for a quote';
         under.textContent = `Stays over ${maxInstant} nights are quoted for the whole flat.`;
+        longNote.hidden = true;
         target = `/work-stays?${params}#quote`;
         reserve.disabled = false;
         return;
@@ -119,6 +121,7 @@ const { property: p } = Astro.props;
       breakdown.innerHTML = [
         `<div><dt>${plural(n, 'night')}</dt><dd>${gbp(q.subtotal)}</dd></div>`,
         q.discount ? `<div><dt>Direct booking discount (${Math.round(q.discountRate * 100)}%)</dt><dd>−${gbp(q.discount)}</dd></div>` : '',
+        `<div><dt>Booking and cleaning fees</dt><dd>£0</dd></div>`,
         `<div class="breakdown__total"><dt>Total</dt><dd>${gbp(q.stay)}</dd></div>`,
       ].join('');
       breakdown.hidden = false;
@@ -154,54 +157,98 @@ const { property: p } = Astro.props;
 </script>
 
 <style>
+  /* The only bordered box on the site (BRIEF.md 2.4) */
   .panel {
     align-self: start;
-    padding: var(--s3);
+    padding: 28px;
     background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
+    color: var(--ink);
+    border: 1px solid var(--forest);
+    border-radius: var(--r-card);
   }
-  @media (min-width: 960px) {
+  @media (max-width: 400px) {
     .panel {
-      position: sticky;
-      top: calc(var(--header-h) + var(--s3));
+      padding: 22px 20px;
     }
   }
-  .panel__price {
-    font-size: var(--text-lg);
+  @media (min-width: 900px) {
+    .panel {
+      position: sticky;
+      top: calc(var(--header-h) + 24px);
+    }
   }
-  .panel__note {
-    margin: var(--s2) 0 0;
+
+  .panel__price {
+    margin: 0 0 var(--s3);
+    color: var(--text-3);
+  }
+  .panel__amount {
+    margin-right: 4px;
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    line-height: 1;
+    color: var(--forest);
   }
 
   .panel__dates {
-    margin: var(--s2) 0;
+    margin-bottom: 12px;
   }
 
   .guests {
-    margin-bottom: var(--s2);
+    margin-bottom: var(--s3);
+    padding-top: 6px;
+  }
+  .guests label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--forest-soft);
   }
 
+  /* Mono figures, ruled like a schedule */
   .breakdown {
-    margin: 0 0 var(--s2);
+    margin: 0 0 var(--s3);
+    border-top: 1px solid var(--line-strong);
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
   }
   .breakdown :global(div) {
     display: flex;
     justify-content: space-between;
     gap: var(--s2);
-    padding: 0.375rem 0;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .breakdown :global(dt) {
+    color: var(--text-3);
   }
   .breakdown :global(dd) {
     margin: 0;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
   }
   .breakdown :global(.breakdown__total) {
-    margin-top: 0.25rem;
-    padding-top: var(--s1);
-    border-top: 1px solid var(--line);
-    font-weight: 700;
+    border-bottom: 0;
+    font-size: 0.9375rem;
+  }
+  .breakdown :global(.breakdown__total dt) {
+    color: var(--ink);
+  }
+
+  .panel__note {
+    margin: 12px 0 0;
+    font-size: var(--t-small);
+    line-height: 1.45;
+    color: var(--text-3);
+  }
+  .panel__note [hidden] {
+    display: none;
   }
 
   .error {
+    margin: 0 0 var(--s2);
     color: var(--error);
   }
   .button:disabled {
