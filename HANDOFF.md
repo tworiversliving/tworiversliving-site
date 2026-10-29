@@ -47,7 +47,9 @@ This file records what is already built and the decisions made after the plan wa
 
 **Stripe, tested 26 Oct 2026 (Test mode sandbox, PMS_PROVIDER=mock):** full booking in the browser with extras, Turnstile passed, Embedded Checkout paid with 4242, webhook confirmed it and wrote it to the mock PMS, then cancelled at /booking with an automatic refund. Resend accepted the emails without errors.
 
-**Not tested yet:** the conflict refund against real Stripe (block a night mid-checkout), email delivery to the inbox (SPF/DKIM/DMARC), and writing or cancelling a booking in Smoobu.
+**Conflict refund against Stripe test mode:** passed 29 Oct 2026 (see Phase 4 below).
+
+**Not tested yet:** the conflict refund on live Stripe, email delivery to the inbox (SPF/DKIM/DMARC), and writing or cancelling a booking in Smoobu.
 
 ## Still to build
 
@@ -68,7 +70,67 @@ This file records what is already built and the decisions made after the plan wa
 
 **Open from Phase 3:** the map circle is centred on the building's rough position, so its centre gives the flat away. Shift `map.lat/lng` a couple of hundred metres and re-run the tile script. Decide what happens to refunds inside the 5-day window (terms currently say none, matching the code).
 
-**Phase 4 (new chat):** tests with the mock PMS, Lighthouse, deploy and launch checklist.
+**Phase 4:** tests and Lighthouse done 29 Oct 2026 on branch `launch/phase-4-checks` (from redesign phase 3, before redesign phases 4 to 6 were merged). Deploy not started. See "Phase 4: tests and launch" below.
+
+## Phase 4: tests and launch (29 Oct 2026)
+
+**Automated tests.** `scripts/test-booking.mjs` runs against a local `wrangler dev` with PMS_PROVIDER=mock. It wipes the local D1 tables, only talks to localhost, and refuses live Stripe keys. Run it once in each mode:
+
+```
+npm run build && npx wrangler dev --test-scheduled --port 8799
+node scripts/test-booking.mjs http://localhost:8799
+```
+
+- Request mode (STRIPE_SECRET_KEY empty): 62 passed. Availability, quotes, minimum stay, 7-guest cap, 90+ nights refused, year-ahead limit, long stays, enquiry (JSON and no-JS form post), request, lookup, withdraw, iCal, daily cron (all three emails, 2h expiry, retention, nothing sent twice).
+- Instant mode (Stripe test keys): 76 passed. Adds checkout session and hold, second guest refused on held nights, bad webhook signature refused, paid booking confirmed and written to the mock PMS, webhook retry changes nothing, guest cancel with a full refund in Stripe, **night taken mid-checkout refunded automatically in Stripe**, lapsed session frees the nights.
+- Instant-mode payments are real Stripe test PaymentIntents (pm_card_visa); the script signs its own webhooks with STRIPE_WEBHOOK_SECRET, so no `stripe listen` is needed.
+- Long stays: the browser sends 15+ nights to /work-stays without calling /api/quote, and /api/enquiry never touches the PMS, so the enquiry takes dates across or starting on booked nights. /api/quote itself still checks availability for 15+ nights; nothing in the site calls it for those stays.
+- For the run, RESEND_API_KEY was blank (emails logged, checked by subject and recipient) and TURNSTILE_SECRET_KEY was Cloudflare's always-pass test secret.
+
+**Stripe publishable key.** The test key in .dev.vars was pasted twice (207 characters: the 99-character body, one stray character, then the body again). The right value is `pk_test_` plus the first 99 characters. Check the live one is 107 characters before setting it in Cloudflare.
+
+**Lighthouse (12, local wrangler dev, performance / accessibility / best practices / SEO):**
+
+| Page | Mobile | Desktop |
+| --- | --- | --- |
+| / | 96 / 100 / 100 / 69 | 100 / 100 / 100 / 69 |
+| /stays/stoke-newington-3-bed | 94 / 100 / 100 / 69 | 96 / 100 / 100 / 69 |
+| /work-stays | 86 / 100 / 100 / 69 | 100 / 100 / 100 / 69 |
+| /book/stoke-newington-3-bed | 64 / 100 / 100 / 69 | 79 / 100 / 100 / 69 |
+
+- SEO 69 is only the noindex tag from `site.indexable: false`. It goes to 100 when that's flipped at launch.
+- /book: CLS 0.6. `[data-flow]` is hidden until the quote loads, then the whole form appears and pushes the footer down. Reserve its height (or render it with placeholders) in redesign phase 5 or 6, which restyle this page.
+- /work-stays mobile LCP 3.7s. Re-run all of these after the redesign merges: phases 4 to 6 rebuild the property page, /work-stays and /book.
+- No banned words or em dashes in any built page.
+
+**Before deploy (needs the owner's go-ahead):**
+
+1. `PMS_PROVIDER` in wrangler.jsonc: "mock" → "smoobu". Leave .dev.vars on mock.
+2. `npx wrangler d1 create tworivers`, put the id into `database_id` in wrangler.jsonc (still all zeros), then `npm run db:remote`.
+3. `npx wrangler login`, then set and confirm with `npx wrangler secret list`:
+
+| Secret | Needed for | Notes |
+| --- | --- | --- |
+| SMOOBU_API_KEY, SMOOBU_API_SECRET | Calendar, prices, writing bookings | HMAC pair (legacy key stops 31 Oct 2026) |
+| SMOOBU_APARTMENT_IDS | Calendar | `{"stoke-newington-3-bed": 3531046}` |
+| RESEND_API_KEY | All email | Domain must be verified first |
+| TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY | Bot check on booking and enquiry forms | Add tworiversliving.co.uk to the widget's hostnames |
+| ARRIVAL_INFO | Pre-arrival email (address, door code, wifi) | Without it the email says "We will send the address and access details separately", so you must send them by hand |
+| STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY | Instant booking | Live keys, only after Stripe verifies. Without them the site takes requests |
+| STRIPE_WEBHOOK_SECRET | Instant booking | From the live webhook endpoint, not `stripe listen` |
+| SLACK_WEBHOOK_URL | Optional host alerts | |
+
+**Deploy order:** D1 + remote migrations → secrets → Workers Builds (README step 5, project name `tworiversliving`) → custom domain and www redirect (README step 6) → Resend domain → Stripe live webhook once verified → `indexable: true`, sitemap to Search Console.
+
+**Resend DNS.** Add the domain in Resend, region EU. Copy the records Resend shows into Cloudflare DNS, all **DNS only** (grey cloud): an MX and TXT (SPF) on the `send` subdomain, and the DKIM TXT at `resend._domainkey`. These sit on subdomains, so they don't clash with Zoho's MX and SPF on the root. Add DMARC once: TXT `_dmarc` = `v=DMARC1; p=none; rua=mailto:stay@tworiversliving.co.uk`, then move to `p=quarantine` after a few clean weeks. Check with mail-tester.com or Gmail "Show original" (SPF, DKIM and DMARC all PASS).
+
+**After deploy, test with the owner:**
+
+1. Email: make a request-mode booking and an enquiry with your own Gmail and Outlook addresses. Check inbox, not spam, and the headers.
+2. Smoobu write and cancel: this needs a paid instant booking, which appears in the real calendar and on the channels. Ask first. Pick far-off dates, cancel straight away at /booking, then check it's gone from Smoobu and the channels.
+3. Live conflict refund: open checkout, block one of the nights in Smoobu, then pay with a real card. It should refund automatically. Unblock afterwards.
+
+**Still blocking launch (owner's side):** WhatsApp number (`todo.whatsapp`, `whatsappHref`, phone in site.ts), ICO registration number, company number and registered office, Stripe verification (site runs in request mode until then), solicitor's read of /terms, /privacy, /cookies, /house-rules, map circle offset, the refund policy inside 5 days (`todo.lateCancellation`), the other open values in src/data/todo.ts (bus routes, wifi speed, parking per stay or per night, shower confirmed), insurance in writing, and a phone check on iPhone and Android.
 
 ## Redesign Phase 3: date picker (29 Oct 2026)
 
