@@ -15,7 +15,7 @@ export const site = {
   // From the ICO once the data protection fee is paid. Shown on /privacy.
   icoNumber: '[ICO registration number]',
   correspondenceAddress: 'Stoke Newington High Street, London N16',
-  responseTime: 'We reply within a few hours, 8am to 10pm.',
+  responseTime: 'We reply within a few hours.',
   hosts: 'Hamza and Emmanuel',
   instagram: '',
   linkedin: '',

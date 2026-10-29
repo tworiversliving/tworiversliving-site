@@ -8,6 +8,8 @@ export interface Photo {
   file: string;
   room: 'Living room' | 'Kitchen and dining' | 'Bedroom 1' | 'Bedroom 2' | 'Bedroom 3' | 'Bathroom' | 'Workspace' | 'Neighbourhood';
   alt: string;
+  /** The TV is in shot. Never the first photo anyone sees (BRIEF.md 3). */
+  tv?: boolean;
 }
 
 export interface Review {
@@ -63,7 +65,7 @@ export const properties: Property[] = [
     overview: [
       'Three private double bedrooms, so nobody sleeps on the sofa unless they want to. A dining table seats everyone together, and the kitchen is set up for proper meals in.',
       "It's a top floor flat, so you get good natural light through the day and nobody walking about above you. There's a washing machine for longer stays, and a real desk and chair for anyone who needs to work.",
-      'Church Street is a minute away for cafés, pubs and restaurants. Stoke Newington station is a five-minute walk, with trains to Liverpool Street in about 15 minutes.',
+      'Church Street is a minute away for cafés, pubs and restaurants. Stoke Newington station is a five-minute walk, with trains to Liverpool Street in 15 minutes.',
       "We're Hamza and Emmanuel. We were born and raised in Stoke Newington, live a few minutes away and look after the flat ourselves.",
     ],
     sleeping: [
@@ -101,7 +103,7 @@ export const properties: Property[] = [
     walkingTimes: [
       { place: 'Church Street', time: '1 min walk' },
       { place: 'Stoke Newington station', time: '5 min walk' },
-      { place: 'Liverpool Street', time: 'about 15 min by train' },
+      { place: 'Liverpool Street', time: '15 min by train' },
       { place: 'Clissold Park', time: 'short walk' },
     ],
     houseRules: [
@@ -122,8 +124,8 @@ export const properties: Property[] = [
     ],
     extras: ['parking', 'early_checkin', 'late_checkout'],
     photos: [
-      { file: 'living-room.jpg', room: 'Living room', alt: 'Living room with two sofas, a chandelier and daylight from the sash window' },
-      { file: 'living-room-tv.jpg', room: 'Living room', alt: 'Living room seating facing the wall-mounted TV' },
+      { file: 'living-room.jpg', room: 'Living room', alt: 'Living room with two sofas, a chandelier and daylight from the sash window', tv: true },
+      { file: 'living-room-tv.jpg', room: 'Living room', alt: 'Living room seating facing the wall-mounted TV', tv: true },
       { file: 'living-room-detail.jpg', room: 'Living room', alt: 'Round wooden coffee table in front of the sofa by the window' },
       { file: 'dining.jpg', room: 'Kitchen and dining', alt: 'Dining table laid for six beside the living room window' },
       { file: 'kitchen.jpg', room: 'Kitchen and dining', alt: 'Kitchen with a gas cooker, fridge-freezer and worktop space' },

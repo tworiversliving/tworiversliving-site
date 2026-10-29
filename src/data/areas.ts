@@ -33,7 +33,7 @@ export const areas: Area[] = [
       {
         title: 'Getting around',
         intro:
-          'Stoke Newington station is a five-minute walk from the flat, with trains to Liverpool Street in about 15 minutes. [Add bus routes and times once confirmed.]',
+          'Stoke Newington station is a five-minute walk from the flat, with trains to Liverpool Street in 15 minutes. [Add bus routes and times once confirmed.]',
         items: [],
       },
       {

@@ -1,0 +1,227 @@
+---
+// Rounded-corner photo carousel: scroll-snap track, round paper arrows, a mono "1 / 5" counter and dots.
+// Used by PhotoCard and the property page gallery. Anything in the slot sits over the photos (e.g. a button).
+import type { Photo as PhotoData } from '../../data/properties';
+import Photo from './Photo.astro';
+
+interface Props {
+  slug: string;
+  photos: PhotoData[];
+  /** Accessible name, e.g. 'Bedroom 1 photos'. */
+  label: string;
+  ratio?: '4/3' | '3/2' | '4/5' | '1';
+  sizes?: string;
+  /** Load the first photo straight away (above the fold). */
+  eager?: boolean;
+  /**
+   * always: photos swipe at any width.
+   * wide: photos swipe only once the nearest container is 720px wide; below that the row of cards
+   * around it swipes instead, so photos move by the arrows and the two never fight.
+   */
+  swipe?: 'always' | 'wide';
+  /** Round all corners (true) or leave that to a parent card (false). */
+  rounded?: boolean;
+  class?: string;
+}
+
+const { slug, photos, label, ratio = '4/3', sizes, eager = false, swipe = 'always', rounded = false, class: className } = Astro.props;
+const many = photos.length > 1;
+// Past eight, dots stop telling you anything; the counter does the job
+const dots = many && photos.length <= 8;
+---
+
+<tr-carousel class:list={['carousel', `carousel--swipe-${swipe}`, { 'carousel--rounded': rounded }, className]}>
+  <div class="carousel__track" role="group" aria-roledescription="carousel" aria-label={label} tabindex={many ? 0 : undefined}>
+    {photos.map((ph, i) => <Photo slug={slug} file={ph.file} alt={ph.alt} ratio={ratio} sizes={sizes} eager={eager && i === 0} />)}
+  </div>
+  {
+    many && (
+      <>
+        <button type="button" class="carousel__nav carousel__nav--prev" aria-label="Previous photo" data-prev disabled>
+          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
+        </button>
+        <button type="button" class="carousel__nav carousel__nav--next" aria-label="Next photo" data-next>
+          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
+        </button>
+        <p class="carousel__count" aria-live="polite">
+          <span data-current>1</span> / {photos.length}
+        </p>
+      </>
+    )
+  }
+  {
+    dots && (
+      <div class="carousel__dots" aria-hidden="true">
+        {photos.map((_, i) => <span class:list={{ 'is-on': i === 0 }} />)}
+      </div>
+    )
+  }
+  <slot />
+</tr-carousel>
+
+<script>
+  class Carousel extends HTMLElement {
+    observer?: IntersectionObserver;
+
+    connectedCallback() {
+      const track = this.querySelector<HTMLElement>('.carousel__track');
+      if (!track) return;
+      const slides = Array.from(track.children) as HTMLElement[];
+      if (slides.length < 2) return;
+      const prev = this.querySelector<HTMLButtonElement>('[data-prev]')!;
+      const next = this.querySelector<HTMLButtonElement>('[data-next]')!;
+      const current = this.querySelector<HTMLElement>('[data-current]')!;
+      const dots = Array.from(this.querySelectorAll<HTMLElement>('.carousel__dots span'));
+      let index = 0;
+
+      const show = (i: number) => {
+        index = i;
+        current.textContent = String(i + 1);
+        dots.forEach((d, n) => d.classList.toggle('is-on', n === i));
+        prev.disabled = i === 0;
+        next.disabled = i === slides.length - 1;
+      };
+      const go = (i: number) => {
+        const to = Math.max(0, Math.min(slides.length - 1, i));
+        const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+        track.scrollTo({ left: slides[to].offsetLeft, behavior: smooth ? 'smooth' : 'auto' });
+        show(to);
+      };
+
+      prev.addEventListener('click', () => go(index - 1));
+      next.addEventListener('click', () => go(index + 1));
+      track.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') go(index - 1);
+        if (e.key === 'ArrowRight') go(index + 1);
+      });
+
+      // Keeps the counter right when the photos are swiped rather than clicked
+      this.observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) if (entry.isIntersecting) show(slides.indexOf(entry.target as HTMLElement));
+        },
+        { root: track, threshold: 0.6 },
+      );
+      slides.forEach((s) => this.observer!.observe(s));
+    }
+
+    disconnectedCallback() {
+      this.observer?.disconnect();
+    }
+  }
+
+  customElements.define('tr-carousel', Carousel);
+</script>
+
+<style>
+  .carousel {
+    position: relative;
+    display: block;
+  }
+  .carousel--rounded {
+    overflow: hidden;
+    border-radius: var(--r-card);
+  }
+
+  .carousel__track {
+    display: flex;
+    overflow-x: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .carousel__track::-webkit-scrollbar {
+    display: none;
+  }
+  .carousel__track > :global(*) {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+  }
+  .carousel--swipe-always .carousel__track {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  @container (min-width: 720px) {
+    .carousel--swipe-wide .carousel__track {
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+    }
+  }
+
+  /* Round paper buttons over the photo. Always shown on touch screens, on hover or focus with a mouse. */
+  .carousel__nav {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--forest);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: opacity 0.15s;
+  }
+  /* 44px tap area around the 36px circle */
+  .carousel__nav::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+  .carousel__nav--prev {
+    left: 10px;
+  }
+  .carousel__nav--next {
+    right: 10px;
+  }
+  .carousel__nav:disabled {
+    opacity: 0 !important;
+    pointer-events: none;
+  }
+  @media (hover: hover) {
+    .carousel__nav {
+      opacity: 0;
+    }
+    .carousel:hover .carousel__nav,
+    .carousel__nav:focus-visible {
+      opacity: 1;
+    }
+  }
+
+  .carousel__count {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    margin: 0;
+    padding: 3px 10px;
+    border-radius: var(--r-pill);
+    background: var(--paper);
+    color: var(--forest);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  .carousel__dots {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 12px;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .carousel__dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--paper);
+    opacity: 0.55;
+    transition: opacity 0.15s;
+  }
+  .carousel__dots span.is-on {
+    opacity: 1;
+  }
+</style>

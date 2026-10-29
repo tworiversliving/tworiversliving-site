@@ -1,0 +1,147 @@
+---
+// Rounded card with a photo carousel, a serif title, a mono line and a footer link.
+// Used for the bedrooms in "Where you'll sleep" (footer opens the photo viewer at that room)
+// and for the flat on area pages (footer links to the property page).
+// Photos swipe once the nearest container is 720px wide (see PhotoCarousel's swipe="wide").
+import type { Photo as PhotoData } from '../data/properties';
+import PhotoCarousel from './ui/PhotoCarousel.astro';
+
+interface Props {
+  slug: string;
+  title: string;
+  /** Mono line under the title, e.g. the bed type. */
+  meta: string;
+  photos: PhotoData[];
+  /** Small mono label above the title, e.g. the area. */
+  label?: string;
+  /** Footer left. Defaults to the photo count. */
+  note?: string;
+  /** Footer button opens the all-photos viewer at this section id. */
+  viewerId?: string;
+  /** Or the footer links here. */
+  href?: string;
+  linkLabel?: string;
+  sizes?: string;
+}
+
+const {
+  slug,
+  title,
+  meta,
+  photos,
+  label,
+  note = `${photos.length} ${photos.length === 1 ? 'photo' : 'photos'}`,
+  viewerId,
+  href,
+  linkLabel = href ? 'View the flat' : 'See photos',
+  sizes = '(min-width: 960px) 280px, (min-width: 640px) 33vw, 84vw',
+} = Astro.props;
+const arrow = '<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M6 14L14 6M7.5 6H14v6.5" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>';
+---
+
+<article class="photo-card">
+  <PhotoCarousel slug={slug} photos={photos} label={`${title} photos`} sizes={sizes} swipe="wide" />
+
+  <div class="photo-card__body">
+    {label && <p class="photo-card__label">{label}</p>}
+    <h3 class="photo-card__name">{title}</h3>
+    <p class="photo-card__bed">{meta}</p>
+    <div class="photo-card__foot">
+      <span class="photo-card__n">{note}</span>
+      {
+        href ? (
+          <a class="photo-card__all" href={href}>
+            {linkLabel}
+            <Fragment set:html={arrow} />
+          </a>
+        ) : (
+          <button type="button" class="photo-card__all" data-open-photos={viewerId}>
+            {linkLabel}
+            <Fragment set:html={arrow} />
+          </button>
+        )
+      }
+    </div>
+  </div>
+</article>
+
+<style>
+  .photo-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    background: var(--paper);
+    transition: border-color 0.15s;
+  }
+  .photo-card:hover {
+    border-color: var(--forest-soft);
+  }
+
+  .photo-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 18px 20px 16px;
+  }
+  .photo-card__label {
+    margin: 0 0 6px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--brass-deep);
+  }
+  .photo-card__name {
+    margin: 0 0 6px;
+    font-family: var(--font-display);
+    font-size: 1.625rem;
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--forest);
+  }
+  .photo-card__bed {
+    margin: 0 0 var(--s3);
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--forest-soft);
+  }
+  .photo-card__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .photo-card__n {
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    color: var(--forest-soft);
+  }
+  .photo-card__all {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: var(--t-small);
+    font-weight: 500;
+    cursor: pointer;
+  }
+  a.photo-card__all {
+    text-decoration: none;
+  }
+  .photo-card__all:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+</style>

@@ -5,6 +5,8 @@ import Photo from '../../components/ui/Photo.astro';
 import Reviews from '../../components/Reviews.astro';
 import Text from '../../components/Text.astro';
 import AreaMap from '../../components/AreaMap.astro';
+import PhotoCard from '../../components/PhotoCard.astro';
+import PhotoCarousel from '../../components/ui/PhotoCarousel.astro';
 import { booking } from '../../config/booking';
 import { properties, type Property } from '../../data/properties';
 import { schemaImages } from '../../lib/og';
@@ -22,11 +24,23 @@ const { property: p } = Astro.props;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const specs = `${plural(p.guests, 'guest')} · ${plural(p.bedrooms, 'bedroom')} · ${plural(p.bathrooms, 'bathroom')}`;
 
-const hero = p.photos.find((ph) => ph.file === p.heroPhoto) ?? p.photos[0];
 const rooms = [...new Set(p.photos.map((ph) => ph.room))];
-// One photo per room after the hero, so the grid shows the whole flat rather than one room five times.
-const gallery = [hero, ...rooms.filter((r) => r !== hero.room && r !== 'Neighbourhood').map((r) => p.photos.find((ph) => ph.room === r)!)].slice(0, 5);
+// Gallery photos: files that exist, no neighbourhood shots. A TV shot is never first.
+const files = import.meta.glob('/src/assets/properties/**/*.{jpg,jpeg,png,webp,avif}');
+const pool = p.photos.filter((ph) => ph.room !== 'Neighbourhood' && `/src/assets/properties/${p.slug}/${ph.file}` in files);
+const hero = pool.find((ph) => ph.file === p.heroPhoto && !ph.tv) ?? pool.find((ph) => !ph.tv) ?? p.photos[0];
+// One photo per room after the hero, so the desktop grid shows the whole flat rather than one room five times.
+const gallery = [hero, ...rooms.filter((r) => r !== hero.room).map((r) => pool.find((ph) => ph.room === r && !ph.tv)).filter((ph) => ph !== undefined)].slice(0, 5);
+// The phone carousel carries on through every other photo, TV shots last.
+const others = pool.filter((ph) => !gallery.includes(ph));
+const carousel = [...gallery, ...others.filter((ph) => !ph.tv), ...others.filter((ph) => ph.tv)];
 const photoFor = (file?: string) => p.photos.find((ph) => ph.file === file);
+const roomId = (room: string) => `photos-${room.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+// Each bedroom's own photos, with its main photo first
+const roomPhotos = (room: string, main?: string) => {
+  const all = p.photos.filter((ph) => ph.room === room);
+  return [...all.filter((ph) => ph.file === main), ...all.filter((ph) => ph.file !== main)];
+};
 const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.file)))];
 ---
 
@@ -41,22 +55,18 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
   ]}
 >
   <div class="container top">
-    <div class="gallery">
-      {
-        gallery.map((ph, i) => (
-          <Photo
-            slug={p.slug}
-            file={ph.file}
-            alt={ph.alt}
-            ratio="3/2"
-            sizes={i === 0 ? '(min-width: 960px) 600px, 100vw' : '(min-width: 960px) 300px, 50vw'}
-            eager={i === 0}
-            class={i === 0 ? 'gallery__main' : 'gallery__thumb'}
-          />
-        ))
-      }
-      <button type="button" class="button button--ghost gallery__all" data-open-photos>View all photos</button>
-    </div>
+    <PhotoCarousel
+      slug={p.slug}
+      photos={carousel}
+      label={`Photos of the ${p.name.toLowerCase()}`}
+      ratio="4/3"
+      sizes="(min-width: 960px) 640px, 100vw"
+      eager
+      rounded
+      class="gallery"
+    >
+      <button type="button" class="button gallery__all" data-open-photos>View all photos</button>
+    </PhotoCarousel>
   </div>
 
   <div class="container layout">
@@ -74,21 +84,10 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
         {p.overview.map((para) => <p>{para}</p>)}
       </section>
 
-      <section class="block" aria-labelledby="sleep">
+      <section class="block sleep" aria-labelledby="sleep">
         <h2 id="sleep">Where you'll sleep</h2>
         <div class="rooms">
-          {
-            p.sleeping.map((r) => {
-              const ph = photoFor(r.photo);
-              return (
-                <div class="room">
-                  <Photo slug={p.slug} file={r.photo} alt={ph?.alt ?? r.room} sizes="(min-width: 960px) 240px, 100vw" />
-                  <h3>{r.room}</h3>
-                  <p class="muted small">{r.bed}</p>
-                </div>
-              );
-            })
-          }
+          {p.sleeping.map((r) => <PhotoCard slug={p.slug} title={r.room} meta={r.bed} photos={roomPhotos(r.room, r.photo)} viewerId={roomId(r.room)} />)}
         </div>
       </section>
 
@@ -192,7 +191,7 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
     <div class="container">
       {
         rooms.map((room) => (
-          <section class="viewer__room">
+          <section class="viewer__room" id={roomId(room)}>
             <h2>{room}</h2>
             <div class="viewer__grid">
               {p.photos
@@ -210,7 +209,14 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
 
 <script>
   const viewer = document.querySelector<HTMLDialogElement>('[data-photos]');
-  document.querySelector('[data-open-photos]')?.addEventListener('click', () => viewer?.showModal());
+  // A room card's button opens the viewer at that room
+  document.querySelectorAll<HTMLElement>('[data-open-photos]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      viewer?.showModal();
+      const room = btn.dataset.openPhotos && document.getElementById(btn.dataset.openPhotos);
+      room ? room.scrollIntoView({ block: 'start' }) : viewer?.scrollTo(0, 0);
+    }),
+  );
   document.querySelector('[data-close-photos]')?.addEventListener('click', () => viewer?.close());
 </script>
 
@@ -219,37 +225,51 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
     padding-top: calc(var(--header-h) + var(--s3));
   }
 
-  .gallery {
-    position: relative;
-    display: grid;
-    gap: var(--s1);
-  }
-  .gallery :global(.gallery__thumb) {
-    display: none;
-  }
-  @media (min-width: 960px) {
-    .gallery {
-      grid-template-columns: 2fr 1fr 1fr;
-      grid-template-rows: auto auto;
-    }
-    .gallery :global(.gallery__main) {
-      grid-row: span 2;
-      aspect-ratio: auto !important;
-    }
-    .gallery :global(.gallery__thumb) {
-      display: block;
-    }
-  }
+  /* Phones and tablets: the rounded carousel through every photo. From 960px the same track becomes
+     the 2fr 1fr 1fr grid of the first five (the photos are 1086px wide, too small to fill the page alone). */
   .gallery__all {
     position: absolute;
-    right: var(--s2);
-    bottom: var(--s2);
+    right: 12px;
+    bottom: 12px;
     min-height: 40px;
+    padding-block: 8px;
+    border-color: var(--paper);
     background: var(--paper);
+    color: var(--forest);
+  }
+  .gallery__all:hover {
+    border-color: var(--mist);
+    background: var(--mist);
+    color: var(--ink);
+  }
+  @media (min-width: 960px) {
+    .top :global(.gallery .carousel__track) {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
+      height: 580px;
+      overflow: visible;
+    }
+    .top :global(.gallery .carousel__track > *) {
+      aspect-ratio: auto !important;
+      height: 100%;
+      min-height: 0;
+    }
+    .top :global(.gallery .carousel__track > :first-child) {
+      grid-row: span 2;
+    }
+    .top :global(.gallery .carousel__track > :nth-child(n + 6)),
+    .top :global(.gallery .carousel__nav),
+    .top :global(.gallery .carousel__count),
+    .top :global(.gallery .carousel__dots) {
+      display: none;
+    }
   }
 
   .layout {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--s6);
     padding-block: var(--s5) var(--section);
   }
@@ -275,18 +295,37 @@ const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.fil
     border-top: 0;
   }
 
+  /* A swipe row of cards running to the screen edge, the next one peeking. Three columns once the content column
+     is 720px wide, so a narrow desktop never leaves one card on a row of its own. */
+  .sleep {
+    container-type: inline-size;
+  }
   .rooms {
-    display: grid;
-    gap: var(--s3);
+    display: flex;
+    gap: 12px;
+    margin-inline: calc(-1 * max(var(--gutter), env(safe-area-inset-left)));
+    padding-inline: max(var(--gutter), env(safe-area-inset-left));
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: max(var(--gutter), env(safe-area-inset-left));
+    scrollbar-width: none;
   }
-  @media (min-width: 640px) {
+  .rooms::-webkit-scrollbar {
+    display: none;
+  }
+  .rooms > :global(*) {
+    flex: 0 0 min(84%, 300px);
+    scroll-snap-align: start;
+  }
+  @container (min-width: 720px) {
     .rooms {
-      grid-template-columns: repeat(3, 1fr);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--s2);
+      margin-inline: 0;
+      padding-inline: 0;
+      overflow: visible;
     }
-  }
-  .room h3 {
-    margin: var(--s2) 0 0.25rem;
-    font-size: 1rem;
   }
 
   @media (min-width: 640px) {

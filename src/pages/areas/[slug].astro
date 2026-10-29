@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Photo from '../../components/ui/Photo.astro';
-import PropertyCard from '../../components/PropertyCard.astro';
+import PhotoCard from '../../components/PhotoCard.astro';
 import Text from '../../components/Text.astro';
 import { areas, type Area } from '../../data/areas';
 import { properties } from '../../data/properties';
@@ -19,6 +19,14 @@ const homes = properties.filter((p) => p.areaSlug === area.slug);
 const source = properties.find((p) => p.slug === area.propertySlug);
 const walking = source?.walkingTimes ?? [];
 const areaPhoto = area.sections.flatMap((s) => s.photos ?? [])[0];
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+// One photo per room for each flat's card, starting with its card photo. No neighbourhood or TV shots.
+const cardPhotos = (p: (typeof homes)[number]) => {
+  const pool = p.photos.filter((ph) => ph.room !== 'Neighbourhood' && !ph.tv);
+  const first = pool.find((ph) => ph.file === p.cardPhoto) ?? pool[0];
+  const rest = [...new Set(pool.map((ph) => ph.room))].filter((r) => r !== first.room).map((r) => pool.find((ph) => ph.room === r)!);
+  return [first, ...rest];
+};
 ---
 
 <Base
@@ -82,7 +90,16 @@ const areaPhoto = area.sections.flatMap((s) => s.photos ?? [])[0];
           <h2>Stay in {area.name}</h2>
           <div class="homes">
             {homes.map((p) => (
-              <PropertyCard property={p} />
+              <PhotoCard
+                slug={p.slug}
+                label={p.area}
+                title={p.name}
+                meta={`${plural(p.guests, 'guest')} · ${plural(p.bedrooms, 'bedroom')} · ${plural(p.bathrooms, 'bathroom')}`}
+                photos={cardPhotos(p)}
+                note={`From £${p.fromPriceFallback} a night`}
+                href={`/stays/${p.slug}`}
+                sizes="(min-width: 640px) 400px, 100vw"
+              />
             ))}
           </div>
         </div>
@@ -122,13 +139,11 @@ const areaPhoto = area.sections.flatMap((s) => s.photos ?? [])[0];
     display: grid;
     padding-block: var(--s1);
   }
+  /* Cards about 300 to 400px wide, as many as fit. The container lets the card's photos swipe once it is wide. */
   .homes {
+    container-type: inline-size;
     display: grid;
-    gap: var(--s4);
-  }
-  @media (min-width: 768px) {
-    .homes {
-      grid-template-columns: repeat(2, 1fr);
-    }
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 400px));
+    gap: var(--s2);
   }
 </style>

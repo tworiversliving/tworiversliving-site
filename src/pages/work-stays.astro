@@ -36,13 +36,6 @@ const steps = [
   'Check yourself in with the lockbox.',
 ];
 
-const terms = [
-  'Invoices and receipts in your company name',
-  'Weekly or monthly rates',
-  'Card or bank transfer',
-  'A booking agreement for every long stay',
-];
-
 const bookerFaq = [
   { q: 'Are there stairs?', a: 'Yes. The front door is up a flight of stairs and there is no lift.' },
   { q: 'Is there parking?', a: 'We can arrange a visitor permit for the resident bays nearby. It is a permit, not a private space.' },
@@ -59,7 +52,7 @@ const bookerFaq = [
     <div class="hero__text">
       <span class="kicker">Work and long stays</span>
       <h1>A base for work in North London.</h1>
-      <p class="lead">The whole flat, three private bedrooms, for {minNights} nights to three months.</p>
+      <p class="lead">The whole flat, three private bedrooms, from {booking.maxInstantNights} nights upon request.</p>
       <a href="#quote" class="button">Request a quote</a>
     </div>
     <Photo slug={p.slug} file={doors?.file} alt={doors?.alt ?? ''} eager sizes="(min-width: 960px) 600px, 100vw" />
@@ -94,18 +87,6 @@ const bookerFaq = [
         <ol class="steps">
           {steps.map((s) => <li><Text text={s} /></li>)}
         </ol>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="terms">
-        <h2>Terms in plain view</h2>
-        <ul class="terms__list">
-          {terms.map((t) => <li>{t}</li>)}
-        </ul>
-        <p class="small muted">We take stays of up to {booking.maxNights} nights. For three months or more, get in touch before you book.</p>
       </div>
     </div>
   </section>
@@ -186,24 +167,5 @@ const bookerFaq = [
     font-size: var(--text-lg);
     color: var(--brass-deep);
     min-width: 1.5em;
-  }
-
-  .terms {
-    padding: var(--s5) var(--s4);
-    border: 1px solid var(--forest);
-    border-radius: var(--radius);
-  }
-  .terms__list {
-    display: grid;
-    gap: var(--s2);
-    margin: 0 0 var(--s3);
-    padding: 0;
-    list-style: none;
-    font-weight: 600;
-  }
-  @media (min-width: 768px) {
-    .terms__list {
-      grid-template-columns: repeat(4, 1fr);
-    }
   }
 </style>
