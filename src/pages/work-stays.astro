@@ -4,13 +4,11 @@ import Photo from '../components/ui/Photo.astro';
 import Accordion from '../components/ui/Accordion.astro';
 import EnquiryForm from '../components/EnquiryForm.astro';
 import Text from '../components/Text.astro';
-import { booking } from '../config/booking';
 import { properties } from '../data/properties';
 import { faqGroups } from '../data/faq';
 
 const p = properties[0];
 const doors = p.photos.find((ph) => ph.file === 'bedroom-doors.jpg') ?? p.photos.find((ph) => ph.room === 'Workspace');
-const minNights = booking.maxInstantNights + 1;
 
 const audiences = [
   { who: 'Contractors and site teams', line: 'Three private rooms under one roof, with a kitchen to cook in after a long day.' },
@@ -25,13 +23,13 @@ const included = [
   'A desk and chair, with wifi throughout [add measured speed]',
   'Full kitchen and a washing machine',
   'Bills included',
-  'Mid-stay clean and linen change [confirm frequency]',
+  'Cleaning and fresh linen as often as you need',
   'Parking permit available',
 ];
 
 const steps = [
   'Send your dates and headcount.',
-  'Get a quote within [X] hours.',
+  'Get a quote for the whole stay.',
   'Pay by card or invoice.',
   'Check yourself in with the lockbox.',
 ];
@@ -45,14 +43,14 @@ const bookerFaq = [
 
 <Base
   title="Work and long stays"
-  description={`A whole three-bedroom flat in Stoke Newington for contractors, placements and crews. ${minNights} nights to three months, invoiced to your company.`}
+  description="A whole three-bedroom flat in Stoke Newington for contractors, placements and crews. Longer stays on request, invoiced to your company."
   ogPhoto={{ slug: properties[0].slug, file: 'bedroom-1.jpg' }}
 >
   <section class="hero container">
     <div class="hero__text">
       <span class="kicker">Work and long stays</span>
       <h1>A base for work in North London.</h1>
-      <p class="lead">The whole flat, three private bedrooms, from {booking.maxInstantNights} nights upon request.</p>
+      <p class="lead">The whole flat, three private bedrooms, for longer stays on request.</p>
       <a href="#quote" class="button">Request a quote</a>
     </div>
     <Photo slug={p.slug} file={doors?.file} alt={doors?.alt ?? ''} eager sizes="(min-width: 960px) 600px, 100vw" />
@@ -95,7 +93,7 @@ const bookerFaq = [
     <div class="container narrow">
       <span class="kicker">Request a quote</span>
       <h2>Tell us what you need</h2>
-      <p class="muted">We'll come back with a price for the whole stay. <Text text="Quotes within [X] hours." /></p>
+      <p class="muted">We'll come back to you quickly with a price for the whole stay.</p>
       <EnquiryForm type="work" />
     </div>
   </section>

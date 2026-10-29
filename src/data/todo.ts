@@ -7,8 +7,6 @@ export const todo = {
   whatsapp: '',
   /** wa.me link, digits only, e.g. 'https://wa.me/447700900123'. */
   whatsappHref: '',
-  /** Walk from the flat to Clissold Park, e.g. '8 minute walk'. */
-  clissoldParkWalk: '',
   /** Bus routes from the nearest stops, e.g. '73, 76, 106, 243'. */
   busRoutes: '',
   /** Measured wifi speed, e.g. '150 Mbps down'. */

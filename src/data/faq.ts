@@ -102,7 +102,7 @@ export const faqGroups: { title: string; items: Faq[] }[] = [
       },
       {
         q: 'Is the flat cleaned during long stays?',
-        a: 'Yes, long stays include a mid-stay clean and a change of linen. [Confirm how often.]',
+        a: 'Yes. We clean and change the linen on a schedule that suits your stay. Tell us how often you would like it and we will arrange it.',
       },
     ],
   },

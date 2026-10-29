@@ -9,7 +9,7 @@ import Accordion from '../components/ui/Accordion.astro';
 import StickyBar from '../components/StickyBar.astro';
 import { booking } from '../config/booking';
 import { site } from '../config/site';
-import { properties } from '../data/properties';
+import { properties, ratingLine } from '../data/properties';
 import { homeFaqs } from '../data/faq';
 import { todo } from '../data/todo';
 
@@ -42,9 +42,9 @@ const flatRows = [
   { key: 'Access', value: 'Top floor, stairs to the front door, no lift' },
 ];
 
-// Clissold Park's walk time is still a TODO: the row hides until it is filled in.
+// Bus routes are still a TODO: the row hides until it is filled in.
 const distances = [
-  ...flat.walkingTimes.map((w) => ({ key: w.place, value: w.place === 'Clissold Park' ? todo.clissoldParkWalk : w.time })),
+  ...flat.walkingTimes.map((w) => ({ key: w.place, value: w.time })),
   { key: 'Buses', value: todo.busRoutes },
 ];
 ---
@@ -83,6 +83,7 @@ const distances = [
               { key: 'Church St', value: '1 min walk' },
               { key: 'Liverpool St', value: '15 min by train' },
               { key: 'Fees', value: 'none, the price is the price' },
+              { key: 'Rated', value: ratingLine(flat) },
             ]}
           />
           <Button href={checkDates} variant="price" sub={`from £${price} a night`} class="hero__cta">Check dates</Button>

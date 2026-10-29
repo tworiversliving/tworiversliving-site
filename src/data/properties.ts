@@ -19,6 +19,14 @@ export interface Review {
   platform: 'Airbnb' | 'Booking.com' | 'Vrbo' | 'Direct';
 }
 
+/** Average score on a booking platform, as shown on the listing. Update when the listing changes. */
+export interface Rating {
+  platform: 'Airbnb' | 'Booking.com';
+  score: number;
+  outOf: 5 | 10;
+  count: number;
+}
+
 export interface Property {
   slug: string;
   name: string;
@@ -44,6 +52,7 @@ export interface Property {
   /** Social share image, cropped to 1.91:1 from the centre. Pick a photo that still reads when cropped. */
   ogPhoto: string;
   reviews: Review[];
+  ratings: Rating[];
   /** Shown on cards until the live price loads. In pounds, after the direct discount. */
   fromPriceFallback: number;
   /** Rough location for the map: a circle, never the exact building. */
@@ -104,7 +113,7 @@ export const properties: Property[] = [
       { place: 'Church Street', time: '1 min walk' },
       { place: 'Stoke Newington station', time: '5 min walk' },
       { place: 'Liverpool Street', time: '15 min by train' },
-      { place: 'Clissold Park', time: 'short walk' },
+      { place: 'Clissold Park', time: '15 min walk' },
     ],
     houseRules: [
       'Check-in from 15:00, checkout by 11:00',
@@ -152,9 +161,17 @@ export const properties: Property[] = [
     ogPhoto: 'dining.jpg',
     // Add the four real reviews here (3 Airbnb, 1 Booking.com). The section stays hidden while this is empty.
     reviews: [],
+    // From the listings, 29 Oct 2026
+    ratings: [
+      { platform: 'Airbnb', score: 4.8, outOf: 5, count: 5 },
+      { platform: 'Booking.com', score: 9, outOf: 10, count: 2 },
+    ],
     fromPriceFallback: 216,
     map: { lat: 51.5628, lng: -0.0742, radiusM: 400 },
   },
 ];
+
+/** e.g. "4.8/5 on Airbnb · 9/10 on Booking.com" */
+export const ratingLine = (p: Property) => p.ratings.map((r) => `${r.score}/${r.outOf} on ${r.platform}`).join(' · ');
 
 export const getProperty = (slug: string) => properties.find((p) => p.slug === slug);
