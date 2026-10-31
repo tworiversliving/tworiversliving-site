@@ -371,7 +371,7 @@ const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
     border-radius: 50%;
     font-family: var(--font-sans);
     font-size: var(--text-sm);
-    font-weight: 600;
+    font-weight: 500;
   }
   .row {
     display: grid;
@@ -413,17 +413,19 @@ const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
     gap: 0.125rem;
   }
   .extra__price {
-    font-weight: 600;
+    font-weight: 500;
   }
   .radios {
     display: flex;
     gap: var(--s3);
   }
+  /* The whole label is the tap target, so it carries the 44px */
   .check {
     display: flex;
     align-items: center;
     gap: var(--s1);
-    font-weight: 600;
+    min-height: 44px;
+    font-weight: 500;
   }
   .check input[type='radio'] {
     width: 1.125rem;
@@ -442,7 +444,7 @@ const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
   .error {
     margin: 0;
     color: var(--error);
-    font-weight: 600;
+    font-weight: 500;
   }
   .button {
     justify-self: start;
@@ -478,7 +480,7 @@ const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
     display: flex;
     justify-content: space-between;
     padding: var(--s2);
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     list-style: none;
   }
@@ -522,6 +524,6 @@ const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
     margin-top: 0.25rem;
     padding-top: var(--s1);
     border-top: 1px solid var(--line);
-    font-weight: 700;
+    font-weight: 500;
   }
 </style>

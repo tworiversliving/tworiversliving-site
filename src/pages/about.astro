@@ -76,5 +76,9 @@ const hosts = { file: 'hosts.jpg', alt: `${site.hosts}, the hosts` };
       gap: var(--s8);
       align-items: start;
     }
+    /* Live site before the hosts photo exists */
+    .story:not(:has(.photo)) {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

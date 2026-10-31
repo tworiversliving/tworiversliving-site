@@ -105,6 +105,9 @@ const checkDates = `/stays/${properties[0].slug}#book`;
   }
 
   .header__logo {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
     flex-shrink: 0;
     margin-right: auto;
   }
@@ -123,17 +126,20 @@ const checkDates = `/stays/${properties[0].slug}#book`;
     padding: 0;
     list-style: none;
   }
+  /* 44px tall for the tap target; the underline sits under the text, not at the box edge */
   .header__nav a {
-    padding-block: 6px;
-    border-bottom: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
     color: var(--ink);
+    text-decoration: underline transparent;
+    text-underline-offset: 6px;
     font-size: var(--t-small);
     font-weight: 500;
-    text-decoration: none;
   }
   .header__nav a:hover,
   .header__nav a[aria-current='page'] {
-    border-bottom-color: var(--forest);
+    text-decoration-color: var(--forest);
     color: var(--ink);
   }
 
@@ -228,11 +234,13 @@ const checkDates = `/stays/${properties[0].slug}#book`;
 
   .menu__contact {
     display: grid;
-    gap: var(--s1);
     margin: auto 0 0;
     padding-top: var(--s6);
   }
   .menu__contact a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
     color: var(--forest-soft);
     text-decoration: none;
   }

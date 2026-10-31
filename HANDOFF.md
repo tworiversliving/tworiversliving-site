@@ -78,6 +78,37 @@ This file records what is already built and the decisions made after the plan wa
 
 `src/pages/stays/[slug].astro` rebuilt to BRIEF.md 4.2. The gallery and room tiles still use PhotoCarousel and PhotoCard, restyled from the page. The lightbox and "All N photos" count only include photo files that exist (19 today, so the brief's "24" isn't shown); TV shots come last in each room. New fields in properties.ts: `street`, `headline`, `floor`. StickyBar.astro has a `bar` variant (full-width paper bar, always shown). AreaMap.astro takes an `href` (links to a Google Maps search for the area, not the circle centre). BookingPanel.astro restyled only; its logic and the over-14-nights rule are unchanged. The "Working here" list (with its bracketed wifi placeholder) is folded into the "What's in the flat" schedule; the hosts paragraph moved to the HOSTS row.
 
+## Redesign Phase 5: remaining pages (29 Oct 2026)
+
+Committed together with Phase 4 in 478d269 (the commit message only says Phase 4). /work-stays, /areas/stoke-newington, /about, /faq, /contact, /book-direct, the legal pages (src/layouts/Legal.astro), /booking, /book/confirmed and the 404 restyled to BRIEF.md 4.4. /stays is a 302 to the property page that keeps the query string (src/pages/stays/index.astro), so a listing can come back when there is a second property. Bracketed placeholders are gone from rendered pages: `filled()` in src/config/site.ts hides a line while its value is empty or still in [brackets], and src/data/areas.ts marks what is still to add with `TO ADD` comments. The Open Graph card from 4.5 was left for Phase 6.
+
+## Redesign Phase 6: mobile QA and polish (31 Oct 2026)
+
+QA runs from a folder outside the repo, `../qa` (Playwright and Lighthouse live there, not in this project):
+
+```
+npm run build && npx wrangler dev --port 8787 --var PMS_PROVIDER:mock   # wait for the build first
+cd ../qa && node qa.mjs --shots                  # every route at 360/390/430/768/1440, results in qa/out/
+node qa.mjs --routes=/,/faq --widths=390         # a subset
+npx lighthouse http://localhost:8787/ --only-categories=performance --chrome-flags="--headless=new"
+```
+
+qa.mjs fails on horizontal scroll, tap targets under 44px, contrast under 4.5:1, images without width/height, console errors, a covered sticky-bar button, `vh` in any stylesheet, a missing Redaction preload, and animation with reduced motion on. It also checks inside the date sheet, the desktop popover and the phone menu. Errors logged by Turnstile's own iframe are ignored (it runs its own CSP and anti-debug code). Final run: 0 failures, 0 warnings.
+
+Fixed in this phase:
+- Tap targets: header nav and logo, footer links and email, `.text-link`, links inside a Schedule value, checkbox and radio labels on /book, the "All 19 photos" button and the popover's Close are all 44px tall now.
+- Booked nights in the calendar were faded to 2.4:1. They can still end a stay or sit inside a long one, so they are `--forest-soft` with the strike-through instead. Days that can't be picked at all (past days) stay faded.
+- The homepage said "5 of 22 photos"; it now counts only photo files that exist (19), matching the property page.
+- `.section + .section` was cancelling the top padding of every ruled section after the first (the area guide's headings sat on the rule). `.section.section--ruled` now wins.
+- A missing photo renders nothing on the live site (it was a blank grey block on the homepage, /about and the area guide); the toned block with its filename still shows in dev or with PUBLIC_SHOW_PHOTO_TODOS=true. Their grids drop to one column when the photo is absent.
+- Map tiles are lazy `<img>`s now, not SVG `<image>`s, which loaded eagerly and slowed the property page's first photo. Lighthouse mobile on wrangler dev: home 100, property 97 to 99 (was 90 to 92, LCP 3.3s, now about 1.9s).
+- /work-stays kitchen photo: its margin never applied (scoped style on a child component); it is 3:2 on phones instead of a thin 16:7 strip.
+- The floating sticky bar sits 12px above the home indicator (`calc(12px + env(safe-area-inset-bottom))`) instead of touching it. The property bar, the sheet footer and the phone menu already padded by the safe area. The sheet and menu use dvh; the 404 uses svh.
+- Section 5: removed the labels that repeated their heading ("Why book here" on the homepage, "Book direct" on /book-direct), the arrow icon on photo cards, and font weights 600/700 on the booking pages (only 400 and 500 are loaded). The property page's distances are a distance Schedule, like the homepage.
+- Open Graph card (BRIEF.md 4.5): `public/og/stoke-newington.png`, used by the homepage and the property page through Base's `ogCard` prop. Other pages still crop a photo (src/lib/og.ts). Render it with `cd ../qa && node ../tworiversliving-site/scripts/og-card.mjs`; it reads guests, bedrooms, `fromPriceFallback` and `ogPhoto` from properties.ts, so re-run it when the price changes.
+
+**Open from Phase 6:** photos still to shoot (hosts, Church Street, Clissold Park, station, working nearby); until then those slots are left out and the area guide reads thin. The guidebook picks for the area guide (`TO ADD` in src/data/areas.ts). /book-direct says "Payments are handled by Stripe" while the site still runs in request mode. The share card bakes in £216, so it goes stale if the from price changes and nobody re-runs the script. Safe-area spacing was checked in the CSS, not on a real iPhone.
+
 ## Testing Stripe locally
 
 1. Put the test keys from dashboard.stripe.com/test/apikeys in .dev.vars: `STRIPE_SECRET_KEY=sk_test_...` and `STRIPE_PUBLISHABLE_KEY=pk_test_...`.

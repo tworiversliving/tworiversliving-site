@@ -130,6 +130,10 @@ const alt = (file: string) => source?.photos.find((x) => x.file === file)?.alt ?
     .part__grid--flip .part__text {
       order: 1;
     }
+    /* Live site before this section's photo exists */
+    .part__grid:not(:has(.photo)) {
+      grid-template-columns: 1fr;
+    }
     .part h2 {
       font-size: var(--t-h2);
       line-height: 1;

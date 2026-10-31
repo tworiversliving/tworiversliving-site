@@ -167,8 +167,13 @@ const time = (t: string) => {
     text-decoration: underline;
     text-underline-offset: 3px;
   }
+  /* Booked nights can still end a stay or sit inside a long one, so they stay readable (not faded) */
   .cal__day.is-off {
-    opacity: 0.4;
+    color: var(--forest-soft);
+  }
+  /* Past days and others that can't be picked at all: faded (disabled controls, so no contrast minimum) */
+  .cal__day.is-off[aria-disabled] {
+    opacity: 0.45;
   }
   .cal__day[aria-disabled] {
     cursor: default;
@@ -443,9 +448,12 @@ const time = (t: string) => {
     width: 648px;
   }
   .date-pop__close {
-    display: block;
-    margin: 4px 0 0 auto;
-    padding: 4px 0;
+    display: flex;
+    width: max-content;
+    min-width: 44px;
+    justify-content: center;
+    margin: 4px -8px 0 auto;
+    padding: 0 8px;
     border: 0;
     background: none;
     color: var(--forest);

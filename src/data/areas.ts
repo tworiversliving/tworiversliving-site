@@ -7,7 +7,7 @@ export interface AreaSection {
   intro: string;
   /** Places or tips. Leave empty until the real picks are added. */
   items: { name: string; note: string }[];
-  /** Photo file names from the area's property folder. A file not added yet shows a toned block. */
+  /** Photo file names from the area's property folder. A file not added yet is left out of the live page (a toned block in dev). */
   photos?: string[];
 }
 

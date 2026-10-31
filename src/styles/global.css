@@ -223,7 +223,7 @@ hr {
 /* A change of ground separates sections on its own, so the next one keeps its full top padding */
 .section--mist + .section,
 .section + .section--mist,
-.section--ruled {
+.section.section--ruled {
   padding-top: var(--section);
 }
 .section--ruled {
@@ -413,7 +413,11 @@ hr {
   width: 100%;
 }
 
+/* Standalone link under a block. Inline-flex so the tap target is 44px tall without moving the text. */
 .text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-weight: 500;
   color: var(--forest);
 }

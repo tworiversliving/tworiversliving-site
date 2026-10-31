@@ -207,7 +207,18 @@ const bookerFaq = [
     font-size: var(--t-mono);
     color: var(--brass-deep);
   }
-  .wide {
-    margin-top: var(--s8);
+  /* Photo is a child component, so its class needs :global. 16/7 is a sliver on a phone: 3/2 there. */
+  :global(.wide) {
+    margin-top: var(--s6);
+  }
+  @media (max-width: 899.98px) {
+    :global(.wide) {
+      aspect-ratio: 3 / 2 !important;
+    }
+  }
+  @media (min-width: 900px) {
+    :global(.wide) {
+      margin-top: var(--s8);
+    }
   }
 </style>

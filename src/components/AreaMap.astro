@@ -13,14 +13,29 @@ interface Props {
 const { property: p, href } = Astro.props;
 const Wrap = href ? 'a' : 'div';
 const { tiles, cx, cy, r } = mapLayout(p.map);
+// Tiles are lazy <img>s, not SVG <image>s (which always load at once), so the map near the foot of
+// the page doesn't compete with the first photo. Positions are percentages of the map box.
+const pct = (n: number, of: number) => `${(n / of) * 100}%`;
 ---
 
 <figure class="map">
   <Wrap class="map__frame" href={href} target={href ? '_blank' : undefined} rel={href ? 'noopener' : undefined}>
+  <div class="map__tiles" style={`aspect-ratio: ${MAP.width} / ${MAP.height}`}>
+    {
+      tiles.map((t) => (
+        <img
+          src={`/maps/${p.slug}/${t.file}`}
+          alt=""
+          width={MAP.tileSize}
+          height={MAP.tileSize}
+          loading="lazy"
+          decoding="async"
+          style={`left: ${pct(t.dx, MAP.width)}; top: ${pct(t.dy, MAP.height)}; width: ${pct(MAP.tileSize, MAP.width)}`}
+        />
+      ))
+    }
+  </div>
   <svg viewBox={`0 0 ${MAP.width} ${MAP.height}`} role="img" aria-label={`Map of ${p.area}. The circle shows roughly where the flat is.`}>
-    <g class="map__tiles">
-      {tiles.map((t) => <image href={`/maps/${p.slug}/${t.file}`} x={t.dx} y={t.dy} width={MAP.tileSize} height={MAP.tileSize} />)}
-    </g>
     <circle cx={cx} cy={cy} r={r} class="map__area" />
   </svg>
   {href && <span class="map__open">Open in Google Maps</span>}
@@ -38,11 +53,21 @@ const { tiles, cx, cy, r } = mapLayout(p.map);
     position: relative;
     display: block;
   }
-  .map svg {
-    display: block;
-    width: 100%;
-    height: auto;
+  .map__tiles {
+    position: relative;
+    overflow: hidden;
     background: var(--line);
+  }
+  .map__tiles img {
+    position: absolute;
+    max-width: none;
+    height: auto;
+  }
+  .map svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
   .map__open {
     position: absolute;

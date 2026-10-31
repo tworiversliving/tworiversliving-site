@@ -26,10 +26,13 @@ const photo = (file: string) => {
 };
 const hero = photo('living-room-detail.jpg');
 const bedroom = photo('bedroom-1.jpg');
+// Only files that exist, so the count matches the property page's "All N photos"
+const files = import.meta.glob('/src/assets/properties/**/*.{jpg,jpeg,png,webp,avif}');
+const photoCount = flat.photos.filter((ph) => `/src/assets/properties/${flat.slug}/${ph.file}` in files).length;
 const strip = ['dining.jpg', 'kitchen-detail.jpg', 'bedroom-3-detail.jpg', 'workspace.jpg'].map(photo);
 const churchStreet = photo('church-street.jpg');
 const park = photo('clissold-park.jpg');
-// No hosts photo yet: renders as a toned placeholder until one is added to the property folder.
+// No hosts, Church Street or park photo yet: those slots are left out of the live page until the files exist.
 const hosts = { file: 'hosts.jpg', alt: `${site.hosts}, the hosts` };
 
 const sleeping = flat.sleeping.map((s) => ({ key: s.room, value: s.bed }));
@@ -43,6 +46,9 @@ const flatRows = [
 ];
 
 // Bus routes are still a TODO: the row hides until it is filled in.
+// Share card from scripts/og-card.mjs (BRIEF.md 4.5)
+const ogCard = { src: '/og/stoke-newington.png', alt: `Stoke Newington, kept local. ${flat.guests} guests, ${flat.bedrooms} bedrooms, with the dining table.` };
+
 const distances = [
   ...flat.walkingTimes.map((w) => ({ key: w.place, value: w.time })),
   { key: 'Buses', value: todo.busRoutes },
@@ -52,6 +58,7 @@ const distances = [
 <Base
   title={site.name}
   description="Book a three-bedroom flat in Stoke Newington direct with the hosts. Lower prices than the booking platforms, no booking fees, for short breaks and work trips."
+  ogCard={ogCard}
 >
   <div class="home">
     <section class="hero" id="hero">
@@ -108,7 +115,7 @@ const distances = [
           {strip.map((p) => <Photo slug={flat.slug} file={p.file} alt={p.alt} ratio="4/5" sizes="(min-width: 900px) 40vw, 78vw" />)}
         </SwipeRow>
         <div class="container strip__meta mono">
-          <span class="strip__count">{strip.length + 1} of {flat.photos.length} photos</span>
+          <span class="strip__count">{strip.length + 1} of {photoCount} photos</span>
           <a href={flatHref}>View all</a>
         </div>
       </div>
@@ -141,7 +148,6 @@ const distances = [
 
     <section class="section why" aria-labelledby="why-title">
       <div class="container">
-        <Label>Why book here</Label>
         <h2 id="why-title" class="why__line">Same flat as on Airbnb, <em>without the platform fee.</em></h2>
         <ul class="why__points">
           <li>
@@ -312,6 +318,9 @@ const distances = [
     margin: 12px 0 0;
   }
   .strip__meta a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     color: var(--forest);
   }
   .strip__count {
@@ -338,6 +347,7 @@ const distances = [
       grid-column: 1 / -1;
       display: flex;
       justify-content: space-between;
+      align-items: center;
       width: 100%;
       margin-inline: auto;
     }
@@ -450,6 +460,10 @@ const distances = [
       grid-template-columns: 6fr 5fr;
       gap: var(--s8);
     }
+  }
+  /* Live site before the area photos exist: no empty column */
+  .hood__photos:not(:has(.photo)) {
+    display: none;
   }
 
   /* 6. Before you book */

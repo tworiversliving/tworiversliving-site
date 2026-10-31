@@ -21,17 +21,19 @@ interface Props {
   noindex?: boolean;
   /** Photo for the social share image. Defaults to the first property's ogPhoto. */
   ogPhoto?: PhotoRef;
+  /** A ready-made 1200×630 card in public/ (scripts/og-card.mjs). Takes the place of ogPhoto. */
+  ogCard?: { src: string; alt: string };
   /** Extra JSON-LD for this page (Organization and breadcrumbs are added here). */
   schema?: object[];
   /** Trail after Home. Defaults to this page alone. */
   crumbs?: { name: string; path: string }[];
 }
 
-const { title, description, noindex = false, ogPhoto, schema = [], crumbs } = Astro.props;
+const { title, description, noindex = false, ogPhoto, ogCard, schema = [], crumbs } = Astro.props;
 const fullTitle = title === site.name ? title : `${title} | ${site.name}`;
 const canonical = new URL(Astro.url.pathname.replace(/\/$/, '') || '/', site.url).href;
 const robots = noindex || !site.indexable ? 'noindex, nofollow' : 'index, follow';
-const og = await ogImage(ogPhoto);
+const og = ogCard ? { ...ogCard, width: 1200, height: 630 } : await ogImage(ogPhoto);
 
 const path = new URL(canonical).pathname;
 const jsonLd = [organization(), ...(path !== '/' && !noindex ? [breadcrumbs(crumbs ?? [{ name: title, path }])] : []), ...schema];
@@ -85,6 +87,9 @@ const ld = (data: object) => JSON.stringify(data).replace(/</g, '\\u003c');
 <style>
   .skip {
     position: absolute;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     left: var(--s2);
     top: -100px;
     z-index: 100;
