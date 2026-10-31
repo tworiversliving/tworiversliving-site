@@ -1,6 +1,7 @@
 ---
 // Horizontal scroll-snap row. Each child is one item; on phones items are 78% wide so the next one peeks.
-// The mono counter ("1 / 24") follows the item in view. No carousel library.
+// The mono counter ("1 / 8") follows the first item in view. With `arrows`, round buttons beside the
+// counter step one item at a time, for mouse users who can't swipe. No carousel library.
 interface Props {
   /** Accessible name for the row, e.g. 'Photos of the flat'. */
   label: string;
@@ -11,10 +12,11 @@ interface Props {
   /** Total shown in the counter when the row holds fewer items than exist, e.g. 24 photos. */
   total?: number;
   counter?: boolean;
+  arrows?: boolean;
   class?: string;
 }
 
-const { label, itemWidth = '78%', itemWidthDesktop, total, counter = true, class: className } = Astro.props;
+const { label, itemWidth = '78%', itemWidthDesktop, total, counter = true, arrows = true, class: className } = Astro.props;
 const style = `--item-w: ${itemWidth}; --item-w-d: ${itemWidthDesktop ?? itemWidth}`;
 ---
 
@@ -23,10 +25,24 @@ const style = `--item-w: ${itemWidth}; --item-w-d: ${itemWidthDesktop ?? itemWid
     <slot />
   </div>
   {
-    counter && (
-      <p class="swipe__count mono" aria-hidden="true">
-        <span data-current>1</span> / <span data-count>{total ?? ''}</span>
-      </p>
+    (counter || arrows) && (
+      <div class="swipe__foot">
+        {counter && (
+          <p class="swipe__count mono" aria-hidden="true">
+            <span data-current>1</span> / <span data-count>{total ?? ''}</span>
+          </p>
+        )}
+        {arrows && (
+          <div class="swipe__arrows">
+            <button type="button" class="swipe__arrow" aria-label="Previous" data-prev disabled>
+              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+            </button>
+            <button type="button" class="swipe__arrow" aria-label="Next" data-next>
+              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+            </button>
+          </div>
+        )}
+      </div>
     )
   }
 </tr-swipe-row>
@@ -37,18 +53,40 @@ const style = `--item-w: ${itemWidth}; --item-w-d: ${itemWidthDesktop ?? itemWid
 
     connectedCallback() {
       const track = this.querySelector<HTMLElement>('.swipe__track');
+      if (!track) return;
       const current = this.querySelector<HTMLElement>('[data-current]');
       const count = this.querySelector<HTMLElement>('[data-count]');
-      if (!track) return;
+      const prev = this.querySelector<HTMLButtonElement>('[data-prev]');
+      const next = this.querySelector<HTMLButtonElement>('[data-next]');
       const items = Array.from(track.children) as HTMLElement[];
       if (count) count.textContent = String(this.dataset.total || items.length);
-      if (!current) return;
+      let first = 0;
 
+      const ends = () => {
+        if (prev) prev.disabled = track.scrollLeft < 2;
+        if (next) next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+      };
+      // Step to the item before or after the first one in view
+      const go = (i: number) => {
+        const to = items[Math.max(0, Math.min(items.length - 1, i))];
+        const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+        track.scrollTo({ left: to.offsetLeft - parseFloat(getComputedStyle(track).paddingLeft), behavior: smooth ? 'smooth' : 'auto' });
+      };
+      prev?.addEventListener('click', () => go(first - 1));
+      next?.addEventListener('click', () => go(first + 1));
+      track.addEventListener('scroll', ends, { passive: true });
+      ends();
+
+      const shown = new Set<number>();
       this.observer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
-            if (entry.isIntersecting) current.textContent = String(items.indexOf(entry.target as HTMLElement) + 1);
+            const i = items.indexOf(entry.target as HTMLElement);
+            if (entry.isIntersecting) shown.add(i);
+            else shown.delete(i);
           }
+          if (shown.size) first = Math.min(...shown);
+          if (current) current.textContent = String(first + 1);
         },
         { root: track, threshold: 0.6 },
       );
@@ -69,6 +107,7 @@ const style = `--item-w: ${itemWidth}; --item-w-d: ${itemWidthDesktop ?? itemWid
   }
 
   .swipe__track {
+    position: relative;
     display: flex;
     gap: 10px;
     overflow-x: auto;
@@ -92,9 +131,39 @@ const style = `--item-w: ${itemWidth}; --item-w-d: ${itemWidthDesktop ?? itemWid
     }
   }
 
+  .swipe__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+    margin-top: 12px;
+    padding-inline: max(var(--gutter), env(safe-area-inset-left)) max(var(--gutter), env(safe-area-inset-right));
+  }
   .swipe__count {
-    margin: 12px 0 0;
-    padding-inline: max(var(--gutter), env(safe-area-inset-left));
+    margin: 0;
     color: var(--forest-soft);
+  }
+  .swipe__arrows {
+    display: flex;
+    gap: var(--s1);
+  }
+  .swipe__arrow {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--forest);
+    cursor: pointer;
+  }
+  .swipe__arrow:hover:not(:disabled) {
+    border-color: var(--forest);
+  }
+  .swipe__arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
   }
 </style>
