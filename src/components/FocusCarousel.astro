@@ -1,0 +1,472 @@
+---
+// The flat room by room on forest ground. From 900px the active room sits large in the centre with the
+// others small and faded either side; below that the rooms swipe with native scroll-snap. Each room keeps
+// all its photos: the active slide steps through them. No carousel library.
+import type { Photo as PhotoData } from '../data/properties';
+import Photo from './ui/Photo.astro';
+
+interface Props {
+  slug: string;
+  rooms: { room: string; detail: string; photos: PhotoData[] }[];
+  /** Section id, so the page can link to it. */
+  id?: string;
+}
+
+const { slug, rooms, id } = Astro.props;
+const total = rooms.length;
+const pad = (n: number) => String(n).padStart(2, '0');
+// Same ids as the photo viewer on the property page
+const roomHref = (room: string) => `/stays/${slug}#photos-${room.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+const first = rooms[0];
+---
+
+<tr-focus-carousel>
+  <section class="fc" id={id} aria-roledescription="carousel" aria-label="Inside the flat, room by room">
+    <div class="container fc__head">
+      <h2 class="fc__title">Inside the <em>flat</em></h2>
+      <p class="fc__count" aria-hidden="true" data-count>{pad(1)} / {pad(total)}</p>
+    </div>
+
+    <div class="fc__viewport">
+      <div class="fc__track" data-track>
+        {
+          rooms.map((r, i) => (
+            <div
+              class:list={['fc__slide', { 'is-active': i === 0 }]}
+              role="group"
+              aria-roledescription="slide"
+              aria-label={`${i + 1} of ${total}: ${r.room}`}
+              data-room={r.room}
+              data-info={r.detail}
+              data-href={roomHref(r.room)}
+            >
+              {r.photos.map((ph, n) => (
+                <Photo
+                  slug={slug}
+                  file={ph.file}
+                  alt={ph.alt}
+                  ratio="auto"
+                  sizes="(min-width: 900px) 720px, 82vw"
+                  eager={i < 2 && n === 0}
+                  priority={false}
+                  class={n === 0 ? 'fc__photo is-on' : 'fc__photo'}
+                />
+              ))}
+              <button
+                type="button"
+                class="fc__pick"
+                tabindex="-1"
+                aria-label={i === 0 ? `Next photo of ${r.room}` : `Show ${r.room}`}
+                disabled={i === 0 && r.photos.length < 2}
+                data-pick
+              />
+              {r.photos.length > 1 && (
+                <>
+                  <p class="fc__pill" aria-hidden="true">
+                    <span data-photo>1</span> / {r.photos.length}
+                  </p>
+                  <button type="button" class="fc__step fc__step--prev" aria-label={`Previous photo of ${r.room}`} data-step="-1">
+                    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
+                  </button>
+                  <button type="button" class="fc__step fc__step--next" aria-label={`Next photo of ${r.room}`} data-step="1">
+                    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
+                  </button>
+                </>
+              )}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="fc__foot">
+        <button type="button" class="fc__nav fc__nav--prev" aria-label="Previous room" data-prev>
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+        </button>
+        <div class="fc__caption">
+          <p class="fc__name" data-name>{first.room}</p>
+          <p class="fc__detail" data-detail>{first.detail}</p>
+          <a class="fc__all" href={roomHref(first.room)} data-all>View all photos</a>
+        </div>
+        <button type="button" class="fc__nav fc__nav--next" aria-label="Next room" data-next>
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M7.5 4.5L13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+        </button>
+      </div>
+    </div>
+
+    <p class="visually-hidden" aria-live="polite" data-live></p>
+  </section>
+</tr-focus-carousel>
+
+<script>
+  class FocusCarousel extends HTMLElement {
+    observer?: IntersectionObserver;
+
+    connectedCallback() {
+      const track = this.querySelector<HTMLElement>('[data-track]');
+      if (!track) return;
+      const slides = Array.from(track.children) as HTMLElement[];
+      const total = slides.length;
+      const count = this.querySelector<HTMLElement>('[data-count]')!;
+      const name = this.querySelector<HTMLElement>('[data-name]')!;
+      const detail = this.querySelector<HTMLElement>('[data-detail]')!;
+      const all = this.querySelector<HTMLAnchorElement>('[data-all]')!;
+      const live = this.querySelector<HTMLElement>('[data-live]')!;
+      const wide = matchMedia('(min-width: 900px)');
+      const still = matchMedia('(prefers-reduced-motion: reduce)');
+      const pad = (n: number) => String(n).padStart(2, '0');
+      let active = 0;
+      let speak = 0;
+
+      const render = (announce: boolean) => {
+        slides.forEach((s, n) => {
+          const on = n === active;
+          const many = s.querySelectorAll('.fc__photo').length > 1;
+          const pick = s.querySelector<HTMLButtonElement>('[data-pick]')!;
+          s.classList.toggle('is-active', on);
+          pick.disabled = on && !many;
+          pick.setAttribute('aria-label', on ? `Next photo of ${s.dataset.room}` : `Show ${s.dataset.room}`);
+        });
+        const s = slides[active];
+        this.style.setProperty('--i', String(active));
+        count.textContent = `${pad(active + 1)} / ${pad(total)}`;
+        name.textContent = s.dataset.room ?? '';
+        detail.textContent = s.dataset.info ?? '';
+        all.href = s.dataset.href ?? all.href;
+        // Swiping passes over several rooms: only announce the one it settles on
+        if (announce) {
+          clearTimeout(speak);
+          speak = window.setTimeout(() => (live.textContent = `${s.dataset.room}, ${active + 1} of ${total}`), 400);
+        }
+      };
+
+      // Phones: scroll the room to the centre; the observer below then makes it active
+      const centre = (i: number, smooth = !still.matches) => {
+        const s = slides[i];
+        track.scrollTo({ left: s.offsetLeft - (track.clientWidth - s.offsetWidth) / 2, behavior: smooth ? 'smooth' : 'auto' });
+      };
+      const go = (i: number) => {
+        active = (i + total) % total;
+        render(true);
+        if (!wide.matches) centre(active);
+      };
+
+      // Step through the photos of one room, wrapping round
+      const step = (s: HTMLElement, dir: number) => {
+        const photos = Array.from(s.querySelectorAll<HTMLElement>('.fc__photo'));
+        const now = photos.findIndex((p) => p.classList.contains('is-on'));
+        const to = (now + dir + photos.length) % photos.length;
+        photos.forEach((p, n) => p.classList.toggle('is-on', n === to));
+        const n = s.querySelector<HTMLElement>('[data-photo]');
+        if (n) n.textContent = String(to + 1);
+      };
+
+      slides.forEach((s, i) => {
+        s.querySelector('[data-pick]')!.addEventListener('click', () => (i === active ? step(s, 1) : go(i)));
+        s.querySelectorAll<HTMLElement>('[data-step]').forEach((b) => b.addEventListener('click', () => step(s, Number(b.dataset.step))));
+      });
+      this.querySelector('[data-prev]')!.addEventListener('click', () => go(active - 1));
+      this.querySelector('[data-next]')!.addEventListener('click', () => go(active + 1));
+      this.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') go(active - 1);
+        else if (e.key === 'ArrowRight') go(active + 1);
+        else return;
+        e.preventDefault();
+      });
+
+      this.observer = new IntersectionObserver(
+        (entries) => {
+          if (wide.matches) return;
+          const hit = entries.find((e) => e.isIntersecting);
+          if (!hit) return;
+          const i = slides.indexOf(hit.target as HTMLElement);
+          if (i === active) return;
+          active = i;
+          render(true);
+        },
+        { root: track, threshold: 0.6 },
+      );
+      slides.forEach((s) => this.observer!.observe(s));
+      wide.addEventListener('change', () => wide.matches || centre(active, false));
+      render(false);
+    }
+
+    disconnectedCallback() {
+      this.observer?.disconnect();
+    }
+  }
+
+  customElements.define('tr-focus-carousel', FocusCarousel);
+</script>
+
+<style>
+  tr-focus-carousel {
+    display: block;
+  }
+  .fc {
+    --gap: 12px;
+    --ease: 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    padding-block: var(--section);
+    background: var(--forest);
+    color: var(--on-forest-2);
+  }
+  .fc :focus-visible {
+    outline-color: var(--brass-on-forest);
+  }
+
+  .fc__head {
+    margin-bottom: var(--s4);
+  }
+  .fc__title {
+    margin: 0 0 var(--s1);
+    font-size: var(--t-h2);
+    color: var(--on-forest);
+  }
+  .fc__count {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--brass-on-forest);
+  }
+
+  /* Phones: native scroll, snap to centre, the next room peeking either side */
+  .fc__viewport {
+    overflow-x: clip;
+  }
+  .fc__track {
+    display: flex;
+    align-items: center;
+    gap: var(--gap);
+    /* Slides fill what the padding leaves: 82% on phones, at most 460px on tablets */
+    padding: 4px max(9%, calc(50% - 230px));
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .fc__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .fc__slide {
+    position: relative;
+    flex: 0 0 100%;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: var(--r-photo);
+    background: var(--forest-soft);
+    opacity: 0.45;
+    scroll-snap-align: center;
+    transition: opacity var(--ease);
+  }
+  .fc__slide.is-active {
+    opacity: 1;
+  }
+
+  .fc__slide :global(.fc__photo) {
+    position: absolute;
+    inset: 0;
+    display: none;
+  }
+  .fc__slide :global(.fc__photo.is-on) {
+    display: block;
+  }
+
+  /* The whole photo is one button: picks an inactive room, steps the active room's photos */
+  .fc__pick {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    background: none;
+    cursor: pointer;
+  }
+  .fc__pick:disabled {
+    cursor: default;
+  }
+
+  .fc__pill {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    margin: 0;
+    padding: 3px 10px;
+    border-radius: var(--r-pill);
+    background: var(--paper);
+    color: var(--forest);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    pointer-events: none;
+  }
+
+  /* Round paper arrows over the active photo: always on touch screens, on hover or focus with a mouse */
+  .fc__step {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--forest);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: opacity 0.15s;
+  }
+  /* 44px tap area around the 36px circle */
+  .fc__step::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+  .fc__step--prev {
+    left: 12px;
+  }
+  .fc__step--next {
+    right: 12px;
+  }
+  .fc__slide:not(.is-active) .fc__pill,
+  .fc__slide:not(.is-active) .fc__step {
+    visibility: hidden;
+  }
+  @media (hover: hover) {
+    .fc__step {
+      opacity: 0;
+    }
+    .fc__slide:hover .fc__step,
+    .fc__step:focus-visible {
+      opacity: 1;
+    }
+  }
+
+  .fc__foot {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    align-items: center;
+    gap: var(--s2);
+    max-width: 640px;
+    margin: var(--s4) auto 0;
+  }
+  .fc__nav {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s;
+  }
+  .fc__nav--prev {
+    border: 1px solid var(--on-forest-2);
+    background: none;
+    color: var(--on-forest);
+  }
+  .fc__nav--prev:hover {
+    border-color: var(--on-forest);
+  }
+  .fc__nav--next {
+    border: 1px solid var(--paper);
+    background: var(--paper);
+    color: var(--forest);
+  }
+  .fc__nav--next:hover {
+    background: var(--on-forest);
+  }
+
+  .fc__caption {
+    text-align: center;
+  }
+  .fc__name {
+    margin: 0 0 6px;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    line-height: 1.1;
+    color: var(--on-forest);
+  }
+  .fc__detail {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--brass-on-forest);
+  }
+  .fc__all {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: var(--t-small);
+    font-weight: 500;
+    color: var(--on-forest);
+  }
+  .fc__all:hover {
+    color: var(--paper);
+  }
+
+  /* From 900px: one row, the active room 720 x 480 in the centre, the rest 300 x 380 and faded */
+  @media (min-width: 900px) {
+    .fc {
+      --gap: 24px;
+      --w-on: 720px;
+      --w-off: 300px;
+    }
+    .fc__head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: var(--s4);
+      margin-bottom: var(--s6);
+    }
+    .fc__title {
+      margin: 0;
+    }
+    .fc__track {
+      width: max-content;
+      height: 488px;
+      margin-left: 50%;
+      padding: 4px 0;
+      overflow: visible;
+      scroll-snap-type: none;
+      transform: translateX(calc(-1 * (var(--i, 0) * (var(--w-off) + var(--gap)) + var(--w-on) / 2)));
+      transition: transform var(--ease);
+    }
+    .fc__slide {
+      flex: 0 0 auto;
+      width: var(--w-off);
+      height: 380px;
+      aspect-ratio: auto;
+      transition:
+        width var(--ease),
+        height var(--ease),
+        opacity var(--ease);
+    }
+    .fc__slide.is-active {
+      width: var(--w-on);
+      height: 480px;
+    }
+    .fc__foot {
+      margin-top: var(--s5);
+    }
+    .fc__name {
+      font-size: 2rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fc__track,
+    .fc__slide {
+      transition: none;
+    }
+  }
+</style>

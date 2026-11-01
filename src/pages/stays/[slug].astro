@@ -293,6 +293,12 @@ const rulesText = p.houseRules.map((r) => (/[.!?]$/.test(r) ? r : `${r}.`)).join
     }),
   );
   document.querySelector('[data-close-photos]')?.addEventListener('click', () => viewer?.close());
+  // A link to #photos-<room> (the homepage's "View all photos") opens the viewer at that room
+  const linked = location.hash.startsWith('#photos-') && viewer?.querySelector<HTMLElement>(location.hash);
+  if (viewer && linked) {
+    viewer.showModal();
+    linked.scrollIntoView({ block: 'start' });
+  }
   // Room links scroll inside the dialog without touching the address bar
   viewer?.querySelectorAll<HTMLAnchorElement>('[data-room]').forEach((a) =>
     a.addEventListener('click', (e) => {

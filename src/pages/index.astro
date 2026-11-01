@@ -2,11 +2,10 @@
 import Base from '../layouts/Base.astro';
 import Photo from '../components/ui/Photo.astro';
 import PhotoCarousel from '../components/ui/PhotoCarousel.astro';
-import PhotoCard from '../components/PhotoCard.astro';
+import FocusCarousel from '../components/FocusCarousel.astro';
 import Label from '../components/ui/Label.astro';
 import Button from '../components/ui/Button.astro';
 import Schedule from '../components/ui/Schedule.astro';
-import SwipeRow from '../components/ui/SwipeRow.astro';
 import Accordion from '../components/ui/Accordion.astro';
 import StickyBar from '../components/StickyBar.astro';
 import { booking } from '../config/booking';
@@ -48,7 +47,7 @@ const facts: Record<string, string> = {
 const roomCards = rooms.map((room) => {
   const all = existing.filter((ph) => ph.room === room);
   const lead = mainPhoto(room);
-  return { room, fact: facts[room] ?? '', photos: [...all.filter((ph) => ph !== lead), ...all.filter((ph) => ph === lead)] };
+  return { room, detail: facts[room] ?? '', photos: [...all.filter((ph) => ph !== lead), ...all.filter((ph) => ph === lead)] };
 });
 
 const churchStreet = photo('church-street.jpg');
@@ -123,28 +122,16 @@ const distances = [
         </div>
         <p class="lead">{flat.overview[0]}</p>
       </div>
-
-      <SwipeRow label="The flat, room by room" itemWidth="min(84%, 340px)" itemWidthDesktop="calc((100% - 30px) / 3.4)" class="rooms">
-        {
-          roomCards.map((c) => (
-            <PhotoCard
-              slug={flat.slug}
-              title={c.room}
-              meta={c.fact}
-              photos={c.photos}
-              sizes="(min-width: 900px) 360px, 84vw"
-            />
-          ))
-        }
-      </SwipeRow>
-
-      <div class="container">
-        <div class="flat__foot">
-          <Schedule variant="inline" rows={flatRows} />
-          <a class="text-link" href={flatHref}>See the whole flat</a>
-        </div>
-      </div>
     </section>
+
+    <FocusCarousel slug={flat.slug} rooms={roomCards} />
+
+    <div class="flat-foot">
+      <div class="container flat__foot">
+        <Schedule variant="inline" rows={flatRows} />
+        <a class="text-link" href={flatHref}>See the whole flat</a>
+      </div>
+    </div>
 
     <section class="section ways" aria-labelledby="ways-title">
       <div class="container">
@@ -308,7 +295,7 @@ const distances = [
     }
   }
 
-  /* 2. The flat: heading and intro, then the rooms as a swipe row of cards that starts at the container edge */
+  /* 2. The flat: heading and intro on paper, the rooms on forest (FocusCarousel), then the two facts on paper */
   .flat {
     border-top: 1px solid var(--line);
   }
@@ -319,19 +306,12 @@ const distances = [
   .flat__head {
     display: grid;
     gap: var(--s3);
-    margin-bottom: var(--s5);
   }
   .flat__head .lead {
     margin: 0;
   }
-  .flat :global(.rooms .swipe__track) {
-    gap: 14px;
-    padding-inline: max(var(--gutter), calc((100% - var(--max)) / 2));
-    scroll-padding-inline: max(var(--gutter), calc((100% - var(--max)) / 2));
-  }
-  .flat :global(.rooms .swipe__foot) {
-    max-width: calc(var(--max) + var(--gutter) * 2);
-    margin-inline: auto;
+  .flat-foot {
+    padding-block: var(--s5);
   }
   .flat__foot {
     display: flex;
@@ -339,16 +319,12 @@ const distances = [
     align-items: center;
     justify-content: space-between;
     gap: var(--s2) var(--s4);
-    margin-top: var(--s4);
-    padding-top: var(--s2);
-    border-top: 1px solid var(--line);
   }
   @media (min-width: 900px) {
     .flat__head {
       grid-template-columns: 6fr 5fr;
       gap: var(--s8);
       align-items: end;
-      margin-bottom: var(--s6);
     }
   }
 
