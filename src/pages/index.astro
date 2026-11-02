@@ -1,6 +1,5 @@
 ---
 import Base from '../layouts/Base.astro';
-import Photo from '../components/ui/Photo.astro';
 import PhotoCarousel from '../components/ui/PhotoCarousel.astro';
 import FocusCarousel from '../components/FocusCarousel.astro';
 import Label from '../components/ui/Label.astro';
@@ -19,11 +18,6 @@ const flatHref = `/stays/${flat.slug}`;
 // "Check dates" opens the date sheet; without JavaScript it goes to the booking card.
 const checkDates = `${flatHref}#book`;
 const price = flat.fromPriceFallback;
-
-const photo = (file: string) => {
-  const p = flat.photos.find((ph) => ph.file === file);
-  return { file, alt: p?.alt ?? '' };
-};
 
 // Only photo files that exist, grouped by room in the order properties.ts lists them
 const files = import.meta.glob('/src/assets/properties/**/*.{jpg,jpeg,png,webp,avif}');
@@ -50,25 +44,14 @@ const roomCards = rooms.map((room) => {
   return { room, detail: facts[room] ?? '', photos: [...all.filter((ph) => ph !== lead), ...all.filter((ph) => ph === lead)] };
 });
 
-const churchStreet = photo('church-street.jpg');
-const park = photo('clissold-park.jpg');
-// No hosts, Church Street or park photo yet: those slots are left out of the live page until the files exist.
-const hosts = { file: 'hosts.jpg', alt: `${site.hosts}, the hosts` };
-
 // The two facts that aren't a room with photos
 const flatRows = [
   { key: 'Laundry', value: 'Washing machine' },
   { key: 'Access', value: 'Top floor, stairs to the front door, no lift' },
 ];
 
-// Bus routes are still a TODO: the row hides until it is filled in.
 // Share card from scripts/og-card.mjs (BRIEF.md 4.5)
 const ogCard = { src: '/og/stoke-newington.png', alt: `Stoke Newington, kept local. ${flat.guests} guests, ${flat.bedrooms} bedrooms, with the dining table.` };
-
-const distances = [
-  ...flat.walkingTimes.map((w) => ({ key: w.place, value: w.time })),
-  { key: 'Buses', value: todo.busRoutes },
-];
 ---
 
 <Base
@@ -176,23 +159,6 @@ const distances = [
           </li>
         </ul>
         <p class="why__more"><a class="text-link" href="/book-direct">More on booking direct</a></p>
-      </div>
-    </section>
-
-    <section class="section hood" aria-labelledby="hood-title">
-      <div class="container hood__grid">
-        <div class="hood__text">
-          <Label>{flat.area}, {flat.postcodeArea.replace('London ', '')}</Label>
-          <h2 id="hood-title">A minute from Church Street</h2>
-          <p class="lead">{flat.overview[2]}</p>
-          <Schedule variant="distance" ground="mist" rows={distances} />
-          <p class="hood__more"><a class="text-link" href={`/areas/${flat.areaSlug}`}>Read our Stoke Newington guide</a></p>
-        </div>
-        <div class="hood__photos">
-          <Photo slug={flat.slug} file={churchStreet.file} alt={churchStreet.alt} ratio="3/2" sizes="(min-width: 900px) 520px, 100vw" class="hood__wide" />
-          <Photo slug={flat.slug} file={park.file} alt={park.alt} ratio="1" sizes="(min-width: 900px) 260px, 50vw" />
-          <Photo slug={flat.slug} file={hosts.file} alt={hosts.alt} ratio="1" sizes="(min-width: 900px) 260px, 50vw" />
-        </div>
       </div>
     </section>
 
@@ -406,38 +372,10 @@ const distances = [
     }
   }
 
-  /* 5. Neighbourhood: mist ground */
-  .hood {
-    background: var(--mist);
+  /* 5. Before you book: paper after paper, so a rule between them */
+  .faq {
+    border-top: 1px solid var(--line);
   }
-  .hood__grid {
-    display: grid;
-    gap: var(--s5);
-  }
-  .hood__more {
-    margin: var(--s3) 0 0;
-  }
-  .hood__photos {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    align-content: start;
-  }
-  .hood :global(.hood__wide) {
-    grid-column: span 2;
-  }
-  @media (min-width: 900px) {
-    .hood__grid {
-      grid-template-columns: 6fr 5fr;
-      gap: var(--s8);
-    }
-  }
-  /* Live site before the area photos exist: no empty column */
-  .hood__photos:not(:has(.photo)) {
-    display: none;
-  }
-
-  /* 6. Before you book */
   .faq__grid {
     display: grid;
     gap: var(--s3);
