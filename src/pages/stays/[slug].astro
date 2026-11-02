@@ -226,7 +226,6 @@ const rulesText = p.houseRules.map((r) => (/[.!?]$/.test(r) ? r : `${r}.`)).join
           </p>
           <AreaMap property={p} href={mapsHref} />
           <Schedule variant="distance" rows={distances} />
-          <p class="block__more"><a class="text-link" href={`/areas/${p.areaSlug}`}>Our {p.area} guide</a></p>
         </section>
 
         {
