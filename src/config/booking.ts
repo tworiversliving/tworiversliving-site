@@ -17,7 +17,14 @@ export const booking = {
   checkOutTime: '11:00',
   currency: 'GBP',
   /** Bump this whenever the booking terms change, so each booking records which version was agreed. */
-  termsVersion: '2026-10-27',
+  termsVersion: '2026-11-04',
+};
+
+/** '15:00' -> '3pm', '12:30' -> '12:30pm', '12:00' -> 'midday'. Every time a guest reads goes through this. */
+export const clock = (t: string) => {
+  const [h, m] = t.split(':').map(Number);
+  if (h === 12 && !m) return 'midday';
+  return `${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'am' : 'pm'}`;
 };
 
 export type ExtraId = 'parking' | 'early_checkin' | 'late_checkout';
@@ -45,7 +52,7 @@ export const extras: ExtraDef[] = [
   },
   {
     id: 'early_checkin',
-    label: 'Early check-in from 12:00',
+    label: 'Early check-in from midday',
     description: 'Arrive three hours early. Only offered when the flat is free the night before.',
     price: 2500,
     per: 'stay',
@@ -53,7 +60,7 @@ export const extras: ExtraDef[] = [
   },
   {
     id: 'late_checkout',
-    label: 'Late checkout until 13:00',
+    label: 'Late checkout until 1pm',
     description: 'Leave two hours later. Only offered when nobody arrives that day.',
     price: 2500,
     per: 'stay',

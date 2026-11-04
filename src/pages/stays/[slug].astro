@@ -9,7 +9,7 @@ import AreaMap from '../../components/AreaMap.astro';
 import PhotoCard from '../../components/PhotoCard.astro';
 import PhotoCarousel from '../../components/ui/PhotoCarousel.astro';
 import StickyBar from '../../components/StickyBar.astro';
-import { booking, extras } from '../../config/booking';
+import { booking, clock, extras } from '../../config/booking';
 import { site } from '../../config/site';
 import { properties, ratingLine, type Property } from '../../data/properties';
 import { todo } from '../../data/todo';
@@ -42,18 +42,13 @@ const gallery = [hero, ...rooms.filter((r) => r !== hero.room).map((r) => pool.f
 const others = pool.filter((ph) => !gallery.includes(ph));
 const carousel = [...gallery, ...others.filter((ph) => !ph.tv), ...others.filter((ph) => ph.tv)];
 const roomId = (room: string) => `photos-${room.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-// Each bedroom's own photos, with its main photo first
-const roomPhotos = (room: string, main?: string) => {
+// Each bedroom's own photos, opening on one the desktop gallery grid doesn't already show
+const roomPhotos = (room: string) => {
   const all = existing.filter((ph) => ph.room === room);
-  return [...all.filter((ph) => ph.file === main), ...all.filter((ph) => ph.file !== main)];
+  return [...all.filter((ph) => !gallery.includes(ph)), ...all.filter((ph) => gallery.includes(ph))];
 };
 const schema = [lodging(p, await schemaImages(p.slug, gallery.map((ph) => ph.file)))];
 
-// '15:00' -> '3pm', '12:30' -> '12:30pm'
-const clock = (t: string) => {
-  const [h, m] = t.split(':').map(Number);
-  return `${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'am' : 'pm'}`;
-};
 const pounds = (pence: number) => `£${pence / 100}`;
 const extra = (id: string) => extras.find((e) => e.id === id && p.extras.includes(e.id));
 const parking = extra('parking');
@@ -62,7 +57,7 @@ const late = extra('late_checkout');
 const extrasLine = [
   early && `${early.label.replace(/\d\d:\d\d/, clock).toLowerCase()} (${pounds(early.price)})`,
   late && `${late.label.replace(/\d\d:\d\d/, clock).toLowerCase()} (${pounds(late.price)})`,
-  parking && `a parking permit (${pounds(parking.price)}${todo.parkingBasis ? ` ${todo.parkingBasis}` : ''})`,
+  parking && `a parking permit (${pounds(parking.price)} per ${parking.per})`,
 ].filter(Boolean);
 const listJoin = (items: unknown[]) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : String(items[0] ?? ''));
 
@@ -74,7 +69,7 @@ const flatRows = [
   { key: 'Laundry', value: 'Washing machine' },
   { key: 'Living', value: 'Sofas and a TV' },
   { key: 'Bedding', value: 'Bed linen and towels provided' },
-  { key: 'Parking', value: parking ? `Visitor permit for nearby resident bays, ${pounds(parking.price)}${todo.parkingBasis ? ` ${todo.parkingBasis}` : ''}` : '' },
+  { key: 'Parking', value: parking ? `Visitor permit for nearby resident bays, ${pounds(parking.price)} per ${parking.per}` : '' },
   { key: 'Bathroom', value: [p.bathrooms === 1 ? 'One bathroom' : plural(p.bathrooms, 'bathroom'), todo.showerOrBath.toLowerCase()].filter(Boolean).join(', ') },
   { key: 'Hosts', value: `${site.hosts}, a few minutes away`, href: '/about' },
 ];
@@ -151,7 +146,7 @@ const rulesText = p.houseRules.map((r) => (/[.!?]$/.test(r) ? r : `${r}.`)).join
                   slug={p.slug}
                   title={r.room}
                   meta={r.bed}
-                  photos={roomPhotos(r.room, r.photo)}
+                  photos={roomPhotos(r.room)}
                   viewerId={roomId(r.room)}
                   sizes="(min-width: 900px) 260px, 62vw"
                 />
@@ -213,7 +208,7 @@ const rulesText = p.houseRules.map((r) => (/[.!?]$/.test(r) ? r : `${r}.`)).join
         <section class="block" aria-labelledby="cancel">
           <h2 id="cancel">Cancellation</h2>
           <p class="body">
-            Full refund if you cancel more than {booking.freeCancellationDays} days before check-in.
+            Full refund if you cancel up to {booking.freeCancellationDays} days before arrival.
             {todo.lateCancellation && <>{todo.lateCancellation} </>}
             <a href="/terms">Booking terms</a>
           </p>

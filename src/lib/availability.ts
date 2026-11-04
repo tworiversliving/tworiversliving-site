@@ -123,7 +123,7 @@ export async function getQuote(env: Env, input: QuoteInput): Promise<Quote> {
   if (nightCount < 1) return { ...base, errors: ['Checkout must be after check-in.'] };
   if (checkIn > addDays(today, booking.bookingWindowDays)) return { ...base, errors: ['We only take bookings up to a year ahead.'] };
   if (nightCount > booking.maxNights) {
-    return { ...base, errors: [`For stays of ${booking.maxNights + 1} nights or more, get in touch and we'll talk it through.`] };
+    return { ...base, errors: [`We can't take stays over ${booking.maxNights} nights.`] };
   }
   if (guests < 1 || guests > property.guests) return { ...base, errors: [`This home sleeps up to ${property.guests}.`] };
 

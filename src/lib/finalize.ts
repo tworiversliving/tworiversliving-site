@@ -180,7 +180,7 @@ export async function cancelByGuest(env: Env, b: BookingRow): Promise<{ ok: true
     await setStatus(env.DB, b.ref, 'cancelled');
   } else if (b.status === 'confirmed') {
     if (new Date() >= freeCancellationDeadline(b)) {
-      return { ok: false, error: `Free cancellation closed ${rules.freeCancellationDays} days before check-in. Get in touch and we'll see what we can do.` };
+      return { ok: false, error: `The full refund window closed ${rules.freeCancellationDays} days before arrival. Get in touch and we'll see what we can do.` };
     }
     if (!b.payment_intent || b.payment_intent === 'paid') return { ok: false, error: "We couldn't find the payment for this booking. Get in touch and we'll sort it." };
     // Refund first: if Stripe fails, the booking stays as it is and the guest can try again.

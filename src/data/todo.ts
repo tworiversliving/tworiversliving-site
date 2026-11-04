@@ -13,7 +13,8 @@ export const todo = {
   wifiSpeed: '',
   /** HANDOFF.md records the bathroom as a walk-in shower with no bath. Confirm before launch. */
   showerOrBath: 'Walk-in shower',
-  /** Parking permit at £15: per stay or per night? */
+  /** Parking permit at £15: per stay or per night? Unused: the site and checkout follow `per` on the parking
+   *  extra in src/config/booking.ts (per stay today). Change it there if the answer is per night. */
   parkingBasis: '',
   /** What happens when a guest cancels inside the 5-day window. /terms currently says no refund. */
   lateCancellation: '',

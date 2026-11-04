@@ -22,14 +22,14 @@ const float = variant === 'float';
     float ? (
       <p class="sticky-bar__price">
         <span class="sticky-bar__from">From</span>
-        <span>£{price} a night</span>
+        <span><span data-from-price>£{price}</span> a night</span>
       </p>
     ) : (
       <p class="sticky-bar__price">
         <span>
           <span data-from-price>£{price}</span> a night
         </span>
-        <span class="sticky-bar__from">No fees · Free cancellation {booking.freeCancellationDays} days</span>
+        <span class="sticky-bar__from">No fees · Full refund up to {booking.freeCancellationDays} days before</span>
       </p>
     )
   }

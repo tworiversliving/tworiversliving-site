@@ -1,7 +1,8 @@
 ---
 import Legal from '../layouts/Legal.astro';
-import { booking, extras } from '../config/booking';
+import { booking, clock, extras } from '../config/booking';
 import { filled, site } from '../config/site';
+import { properties } from '../data/properties';
 
 // The page date is the terms version, so what a guest agreed to (bookings.terms_version) matches what's shown here.
 // Bump booking.termsVersion whenever anything below changes.
@@ -77,9 +78,7 @@ const days = booking.freeCancellationDays;
   <h2>5. If you cancel</h2>
   <ul>
     <li>
-      <strong>More than {days} days before check-in:</strong> full refund, including extras. The free cancellation window closes at {
-        booking.checkInTime
-      } UK time, {days} days before your arrival date. Your confirmation email shows the exact date.
+      <strong>More than {days} days before check-in:</strong> full refund, including extras. The full refund window closes at {clock(booking.checkInTime)} UK time, {days} days before your arrival date. Your confirmation email shows the exact date.
     </li>
     <li>
       <strong>Within {days} days of check-in, or if you don't arrive:</strong> no refund. If you need to cancel late, get in touch anyway
@@ -111,7 +110,7 @@ const days = booking.freeCancellationDays;
 
   <h2>8. Check-in and checkout</h2>
   <ul>
-    <li>Check-in is from {booking.checkInTime} and checkout is by {booking.checkOutTime}, unless you've booked early check-in or late checkout.</li>
+    <li>Check-in is from {clock(booking.checkInTime)} and checkout is by {clock(booking.checkOutTime)}, unless you've booked early check-in or late checkout.</li>
     <li>
       Check-in is self check-in with a key lockbox. We email the address, the lockbox code and directions 48 hours before you arrive, so
       make sure the email address and mobile number on your booking are right.
@@ -121,7 +120,7 @@ const days = booking.freeCancellationDays;
   <h2>9. Looking after the home</h2>
   <ul>
     <li>Our <a href="/house-rules">house rules</a> are part of these terms.</li>
-    <li>Only the number of guests on your booking may stay, and never more than the home sleeps. You can't sublet or pass the booking to anyone else.</li>
+    <li>Only the number of guests on your booking may stay, and never more than the home sleeps ({properties.map((h) => `${h.guests} at the ${h.name.toLowerCase()}`).join(', ')}). You can't sublet or pass the booking to anyone else.</li>
     <li>
       Tell us about any damage or breakage as soon as it happens. If you or your group damage the home or its contents beyond normal
       wear and tear, we'll send you photos and the cost of the repair or replacement, and ask you to pay it.

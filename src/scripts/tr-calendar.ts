@@ -170,7 +170,7 @@ export class TrCalendar extends HTMLElement {
           .filter(Boolean)
           .join(' ');
         const status =
-          d === this.checkIn ? ', check-in' : d === this.checkOut ? ', checkout' : !selectable ? ', not available' : off ? `, booked for stays up to ${this.maxInstant} nights` : '';
+          d === this.checkIn ? ', check-in' : d === this.checkOut ? ', checkout' : tooShort ? `, too soon: the minimum stay is ${minStayFor(this.availability, this.checkIn!)} nights` : !selectable ? ', not available' : off ? `, booked for stays up to ${this.maxInstant} nights` : '';
         const showPrice = free && !longStay && info?.price != null;
         cells.push(
           `<button type="button" class="${cls}" data-date="${d}" tabindex="${d === this.focusDate ? 0 : -1}"${selectable ? '' : ' aria-disabled="true"'} aria-pressed="${edge}" aria-label="${LONG.format(parse(d))}${status}${showPrice ? `, ${price(info!.price!)} a night` : ''}"><span class="cal__n">${Number(d.slice(8))}</span><span class="cal__p" aria-hidden="true">${showPrice ? price(info!.price!) : ''}</span></button>`,

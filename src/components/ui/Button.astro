@@ -19,12 +19,12 @@ const classes = ['button', variant !== 'primary' && `button--${variant}`, block 
   href ? (
     <a href={href} class:list={classes} {...rest}>
       <span><slot /></span>
-      {variant === 'price' && sub && <span class="button__sub">{sub}</span>}
+      {variant === 'price' && sub && <span class="button__sub" data-from-line>{sub}</span>}
     </a>
   ) : (
     <button type={type} class:list={classes} {...rest}>
       <span><slot /></span>
-      {variant === 'price' && sub && <span class="button__sub">{sub}</span>}
+      {variant === 'price' && sub && <span class="button__sub" data-from-line>{sub}</span>}
     </button>
   )
 }

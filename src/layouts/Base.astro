@@ -31,7 +31,8 @@ interface Props {
 
 const { title, description, noindex = false, ogPhoto, ogCard, schema = [], crumbs } = Astro.props;
 const fullTitle = title === site.name ? title : `${title} | ${site.name}`;
-const canonical = new URL(Astro.url.pathname.replace(/\/$/, '') || '/', site.url).href;
+// build.format is 'file', so the build sees /faq.html: canonicals use the served path, /faq
+const canonical = new URL(Astro.url.pathname.replace(/(\/index)?\.html$|\/$/, '') || '/', site.url).href;
 const robots = noindex || !site.indexable ? 'noindex, nofollow' : 'index, follow';
 const og = ogCard ? { ...ogCard, width: 1200, height: 630 } : await ogImage(ogPhoto);
 
@@ -49,8 +50,9 @@ const ld = (data: object) => JSON.stringify(data).replace(/</g, '\\u003c');
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta name="robots" content={robots} />
-    <link rel="canonical" href={canonical} />
+    {path !== '/404' && <link rel="canonical" href={canonical} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#FAFAF6" />
     <link rel="preload" href={redaction400} as="font" type="font/woff2" crossorigin />
     <meta property="og:type" content="website" />

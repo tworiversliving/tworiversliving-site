@@ -28,7 +28,11 @@ const bedPhoto = (room: string) => flat.sleeping.find((s) => s.room === room)?.p
 // Hero carousel: one main photo per room, no TV shots above the fold (BRIEF.md 3). Opens on the living room.
 const mainPhoto = (room: string) =>
   existing.find((ph) => ph.file === bedPhoto(room)) ?? existing.find((ph) => ph.room === room && !ph.tv && ph.file !== 'living-room.jpg');
-const heroPhotos = rooms.map(mainPhoto).filter((ph) => ph !== undefined);
+// A room with one photo (the workspace) stays out of the hero, so the room cards below don't repeat it.
+const heroPhotos = rooms
+  .filter((room) => existing.filter((ph) => ph.room === room).length > 1)
+  .map(mainPhoto)
+  .filter((ph) => ph !== undefined);
 
 // Room cards: each room's photos, starting on one the hero doesn't show, the hero's photo last
 const facts: Record<string, string> = {
@@ -59,7 +63,7 @@ const ogCard = { src: '/og/stoke-newington.png', alt: `Stoke Newington, kept loc
   description="Book a three-bedroom flat in Stoke Newington direct with the hosts. Lower prices than the booking platforms, no booking fees, for short breaks and work trips."
   ogCard={ogCard}
 >
-  <div class="home">
+  <div class="home" data-home-slug={flat.slug}>
     <section class="hero" id="hero">
       <div class="container">
         <div class="hero__stage">
@@ -124,7 +128,7 @@ const ogCard = { src: '/og/stoke-newington.png', alt: `Stoke Newington, kept loc
             <Label tone="on-forest">Up to {booking.maxInstantNights} nights · Book now</Label>
             <h3 class="h3">Short stays</h3>
             <p>Weekends, family visits and breaks of up to {booking.maxInstantNights} nights, booked instantly.</p>
-            <p class="mono ways__fact">From £{price} a night</p>
+            <p class="mono ways__fact" data-from-line>From £{price} a night</p>
             <Button href={checkDates} variant="paper" data-open-dates>Check dates</Button>
           </div>
           <div class="ways__col">
@@ -175,6 +179,24 @@ const ogCard = { src: '/og/stoke-newington.png', alt: `Stoke Newington, kept loc
 
   <StickyBar price={price} href={checkDates} after="#hero" />
 </Base>
+
+<script>
+  // The "from" prices above are properties.ts's fallback until the live rate loads: the same rule as the
+  // property page's booking card (lowest direct rate in the next 60 days), from the same endpoint.
+  import { addDays, loadAvailability } from '../scripts/dates';
+  import { gbp } from '../scripts/booking';
+
+  const slug = document.querySelector<HTMLElement>('[data-home-slug]')?.dataset.homeSlug;
+  if (slug)
+    loadAvailability(slug).then((av) => {
+      if (!av) return;
+      const soon = [...av.days.values()].filter((d) => d.available && d.price != null && d.date < addDays(av.today, 60)).map((d) => d.price!);
+      if (!soon.length) return;
+      const from = gbp(Math.min(...soon));
+      document.querySelectorAll('[data-from-price]').forEach((el) => (el.textContent = from));
+      document.querySelectorAll('[data-from-line]').forEach((el) => (el.textContent = el.textContent!.replace(/£[\d,]+(\.\d\d)?/, from)));
+    });
+</script>
 
 <style>
   .home {
