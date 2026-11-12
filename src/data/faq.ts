@@ -1,7 +1,7 @@
 // FAQ copy, used on /faq (all groups) and the home page (the questions marked `home`).
 // Answers draw on src/config so times and rules stay in one place.
 
-import { booking, extras } from '../config/booking';
+import { booking, clock, extras } from '../config/booking';
 import { site } from '../config/site';
 
 export interface Faq {
@@ -44,7 +44,7 @@ export const faqGroups: { title: string; items: Faq[] }[] = [
     items: [
       {
         q: 'What is the cancellation policy?',
-        a: `Cancel more than ${booking.freeCancellationDays} days before check-in for a full refund. You can do it yourself from the link in your confirmation email.`,
+        a: `Full refund if you cancel up to ${booking.freeCancellationDays} days before arrival. You can do it yourself from the link in your confirmation email.`,
         home: true,
       },
       {
@@ -62,12 +62,12 @@ export const faqGroups: { title: string; items: Faq[] }[] = [
     items: [
       {
         q: 'What time are check-in and checkout?',
-        a: `Check-in is from ${booking.checkInTime} and checkout is by ${booking.checkOutTime}. Check-in is self check-in with a key lockbox, and we send the details 48 hours before you arrive.`,
+        a: `Check-in is from ${clock(booking.checkInTime)} and checkout is by ${clock(booking.checkOutTime)}. Check-in is self check-in with a key lockbox, and we send the details 48 hours before you arrive.`,
         home: true,
       },
       {
         q: 'Can I check in early or leave late?',
-        a: `Early check-in from 12:00 is ${pounds(early.price)} and late checkout until 13:00 is ${pounds(late.price)}. We only offer them when the flat is free either side of your stay, so they show up at checkout when they are available.`,
+        a: `Early check-in from midday is ${pounds(early.price)} and late checkout until 1pm is ${pounds(late.price)}. We only offer them when the flat is free either side of your stay, so they show up at checkout when they are available.`,
       },
       {
         q: 'Is there parking?',
@@ -85,12 +85,12 @@ export const faqGroups: { title: string; items: Faq[] }[] = [
       },
       {
         q: 'Who do I contact during my stay?',
-        a: `Us, ${site.hosts}. We live a few minutes away, and the number is in your arrival email. ${site.responseTime}`,
+        a: `Us, ${site.hosts}. We live a few minutes away${site.phoneHref ? ', and the number is in your arrival email' : ', and you can reply to any of our emails'}. ${site.responseTime}`,
       },
     ],
   },
   {
-    title: 'Work stays',
+    title: 'Work and long stays',
     items: [
       {
         q: 'Can you invoice my company?',

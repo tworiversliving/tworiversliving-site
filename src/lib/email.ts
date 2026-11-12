@@ -1,5 +1,5 @@
-import { booking as rules } from '../config/booking';
-import { site } from '../config/site';
+import { booking as rules, clock } from '../config/booking';
+import { filled, site } from '../config/site';
 import { getProperty } from '../data/properties';
 import { gbp } from './availability';
 import { addDays, fmtDateLong, londonToUtc } from './dates';
@@ -51,11 +51,13 @@ function layout(env: Env, paragraphs: string[], rows?: [string, string][]): { ht
         .map(([k, v]) => `<tr><td style="padding:8px 0;border-top:1px solid #D9DCD1;color:#5C6657;width:42%">${esc(k)}</td><td style="padding:8px 0;border-top:1px solid #D9DCD1;color:#2F3A2B">${esc(v)}</td></tr>`)
         .join('')}</table>`
     : '';
-  const html = `<!doctype html><html><body style="margin:0;background:#EEF0E8;font-family:Manrope,Helvetica,Arial,sans-serif;color:#2F3A2B;font-size:16px;line-height:1.6">
+  // Placeholders like "[company number]" or the 7XXX phone never reach a guest
+  const footer = [site.legalName, site.email, ...(site.phoneHref ? [site.phone] : [])].join(' · ');
+  const html = `<!doctype html><html><body style="margin:0;background:#EEF0E8;font-family:Helvetica,Arial,sans-serif;color:#2F3A2B;font-size:16px;line-height:1.6">
 <div style="max-width:560px;margin:0 auto;padding:32px 20px">
-<img src="${env.SITE_URL}/brand/logo-horizontal.png" alt="Two Rivers Living" width="200" style="display:block;margin:0 0 28px">
+<img src="${env.SITE_URL}/brand/logo-horizontal.png" alt="Two Rivers Living" width="200" height="44" style="display:block;width:200px;height:44px;border:0;margin:0 0 28px">
 <div style="background:#FAFAF6;border:1px solid #D9DCD1;border-radius:4px;padding:28px 24px">${body}${table}</div>
-<p style="font-size:13px;color:#5C6657;margin:20px 0 0">${esc(site.legalName)} · ${esc(site.email)} · ${esc(site.phone)}<br>Registered in England and Wales, company no. ${esc(site.companyNumber)}</p>
+<p style="font-size:13px;color:#5C6657;margin:20px 0 0">${esc(footer)}${filled(site.companyNumber) ? `<br>Registered in England and Wales, company no. ${esc(site.companyNumber)}` : ''}</p>
 </div></body></html>`;
   const text = [...paragraphs, ...(rows ?? []).map(([k, v]) => `${k}: ${v}`), '', `${site.legalName} · ${site.email}`].join('\n\n');
   return { html, text };
@@ -67,8 +69,8 @@ function stayRows(b: BookingRow): [string, string][] {
   return [
     ['Booking reference', b.ref],
     ['Home', p?.name ?? b.property],
-    ['Check-in', `${fmtDateLong(b.check_in)} from ${rules.checkInTime}`],
-    ['Checkout', `${fmtDateLong(b.check_out)} by ${rules.checkOutTime}`],
+    ['Check-in', `${fmtDateLong(b.check_in)} from ${clock(rules.checkInTime)}`],
+    ['Checkout', `${fmtDateLong(b.check_out)} by ${clock(rules.checkOutTime)}`],
     ['Guests', String(b.guests)],
     ...extras.map((e) => [e.label, gbp(e.pence)] as [string, string]),
     ['Total', gbp(b.total_pence)],
@@ -80,7 +82,7 @@ export function freeCancellationDeadline(b: Pick<BookingRow, 'check_in'>): Date 
 }
 
 const deadlineText = (b: BookingRow) =>
-  `${rules.checkInTime} on ${fmtDateLong(addDays(b.check_in, -rules.freeCancellationDays))}`;
+  `${clock(rules.checkInTime)} on ${fmtDateLong(addDays(b.check_in, -rules.freeCancellationDays))}`;
 
 export const emails = {
   confirmed(env: Env, b: BookingRow) {
@@ -157,7 +159,7 @@ export const emails = {
         ? `We've refunded ${gbp(refundPence)} to your card. It usually shows within 5 to 10 working days.`
         : b.mode === 'request'
           ? 'Nothing was charged, so there is nothing to refund.'
-          : 'This cancellation was inside the 5-day window, so no refund is due under the booking terms.',
+          : `This cancellation was less than ${rules.freeCancellationDays} days before arrival, so no refund is due under the booking terms.`,
       `We hope to host you another time.\n${site.hosts}`,
     ]);
     return { to: b.email, subject: `Booking cancelled: ${b.ref}`, html, text };
@@ -183,10 +185,10 @@ export const emails = {
       : ['We will send the address and access details separately.'];
     const { html, text } = layout(env, [
       `Hi ${b.first_name},`,
-      `You arrive on ${fmtDateLong(b.check_in)}. Check-in is from ${rules.checkInTime}.`,
+      `You arrive on ${fmtDateLong(b.check_in)}. Check-in is from ${clock(rules.checkInTime)}.`,
       ...lines,
       `A few house rules: ${p?.houseRules.slice(2).join('; ').toLowerCase()}.`,
-      `If anything isn't right when you arrive, message us on ${site.phone} and one of us can be there quickly.`,
+      `If anything isn't right when you arrive, ${site.phoneHref ? `message us on ${site.phone}` : 'reply to this email'} and one of us can be there quickly.`,
       `${site.hosts}`,
     ]);
     return { to: b.email, subject: `Your stay on ${fmtDateLong(b.check_in)}: how to get in`, html, text };
@@ -194,7 +196,7 @@ export const emails = {
   checkinFollowup(env: Env, b: BookingRow) {
     const { html, text } = layout(env, [
       `Hi ${b.first_name},`,
-      `We hope you've settled in. If anything isn't right, tell us now and we'll sort it while you're here. You can reply to this email or message us on ${site.phone}.`,
+      `We hope you've settled in. If anything isn't right, tell us now and we'll sort it while you're here. ${site.phoneHref ? `You can reply to this email or message us on ${site.phone}.` : 'Just reply to this email.'}`,
       `${site.hosts}`,
     ]);
     return { to: b.email, subject: 'Is everything OK with the flat?', html, text };

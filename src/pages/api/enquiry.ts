@@ -42,7 +42,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     if (checkIn < todayLondon()) return fail('Your arrival date has already passed.');
     if (checkOut <= checkIn) return fail('Your leaving date must be after your arrival date.');
     if (nightsBetween(checkIn, checkOut) > booking.maxNights) {
-      return fail(`We take stays of up to ${booking.maxNights} nights. For three months or more, email us first and we'll talk it through.`);
+      return fail(`We can't take stays over ${booking.maxNights} nights.`);
     }
   }
   if (!(await verifyTurnstile(env, body.turnstileToken, clientIp(request)))) {

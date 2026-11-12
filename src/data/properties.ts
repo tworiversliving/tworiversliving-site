@@ -1,7 +1,7 @@
 // Every property on the site. To add a property: copy the object below, give it a new slug,
 // add its photos to src/assets/properties/<slug>/ and its PMS id to SMOOBU_APARTMENT_IDS.
 
-import type { ExtraId } from '../config/booking';
+import { booking, clock, type ExtraId } from '../config/booking';
 import { todo } from './todo';
 
 export interface Photo {
@@ -111,7 +111,7 @@ export const properties: Property[] = [
         Bathroom: ['Walk-in shower', 'Towels provided'],
         'Living and working': ['Wifi throughout', 'Desk and chair', 'TV', 'Sofas'],
         Laundry: ['Washing machine'],
-        Arrival: ['Self check-in with a key lockbox', 'Check-in from 15:00, checkout by 11:00'],
+        Arrival: ['Self check-in with a key lockbox', `Check-in from ${clock(booking.checkInTime)}, checkout by ${clock(booking.checkOutTime)}`],
       },
     },
     working: [
@@ -126,12 +126,12 @@ export const properties: Property[] = [
       { place: 'Clissold Park', time: '15 min walk' },
     ],
     houseRules: [
-      'Check-in from 15:00, checkout by 11:00',
+      `Check-in from ${clock(booking.checkInTime)}, checkout by ${clock(booking.checkOutTime)}`,
       'Up to 7 guests',
       'No smoking anywhere in the flat',
       'No pets',
       'No parties or events',
-      'Quiet hours from 22:00 to 08:00',
+      'Quiet hours from 10pm to 8am',
     ],
     goodToKnow: [
       'The front door is up a flight of stairs and there is no lift. Worth knowing with a pushchair or heavy cases.',
@@ -167,7 +167,8 @@ export const properties: Property[] = [
       { file: 'clissold-park.jpg', room: 'Neighbourhood', alt: 'Clissold Park on a clear day' },
     ],
     heroPhoto: 'living-room.jpg',
-    cardPhoto: 'living-room.jpg',
+    // Checkout page photo. Not a TV shot (BRIEF.md 3).
+    cardPhoto: 'dining.jpg',
     ogPhoto: 'dining.jpg',
     // Add the four real reviews here (3 Airbnb, 1 Booking.com). The section stays hidden while this is empty.
     reviews: [],

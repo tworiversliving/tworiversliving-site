@@ -48,18 +48,20 @@ Run this again whenever a new file appears in `migrations/`, **before** the code
 
 ### 4. Add the secrets
 
-Each command asks you to paste the value. Secrets never go in the code or in git.
+Type each command exactly as written (the name in capitals is the secret's name), press Enter, then paste the value when it asks "Enter a secret value". Never type the value on the command line: a secret's name is shown in plain text in the dashboard. Secrets never go in the code or in git.
 
 ```
 npx wrangler secret put RESEND_API_KEY
 npx wrangler secret put TURNSTILE_SITE_KEY
 npx wrangler secret put TURNSTILE_SECRET_KEY
-npx wrangler secret put SMOOBU_API_KEY
-npx wrangler secret put SMOOBU_API_SECRET
-npx wrangler secret put SMOOBU_APARTMENT_IDS     # {"stoke-newington-3-bed": 3531046}
+npx wrangler secret put ICAL_URLS                # {"stoke-newington-3-bed": "<Guesty iCal export link>"}
 npx wrangler secret put ARRIVAL_INFO             # see below
 npx wrangler secret put SLACK_WEBHOOK_URL        # optional: host alerts in Slack
 ```
+
+Check with `npx wrangler secret list`: it shows the names only.
+
+**Calendar (Guesty).** The site reads Guesty's iCal export for availability (`PMS_PROVIDER` is `ical` in `wrangler.jsonc`). Nightly prices and the minimum stay come from `src/config/rates.ts`, not Guesty. In Guesty, import the site's own feed, `https://tworiversliving.co.uk/ical/stoke-newington-3-bed.ics`, so direct bookings block the dates there. A full Guesty API adapter (live prices, bookings written straight in) is still to build; the Smoobu adapter in `src/lib/pms/smoobu.ts` is no longer used.
 
 `ARRIVAL_INFO` goes into the pre-arrival email, one entry per property:
 
@@ -80,7 +82,7 @@ npx wrangler secret put STRIPE_WEBHOOK_SECRET    # whsec_... from the endpoint y
 
 The site switches to instant booking as soon as all three are set. No redeploy needed.
 
-Plain settings (not secrets) live under `vars` in `wrangler.jsonc`. **Change `PMS_PROVIDER` from `mock` to `smoobu` before launch**, or the live site won't see the real calendar.
+Plain settings (not secrets) live under `vars` in `wrangler.jsonc`. `PMS_PROVIDER` is `ical` for the live site; `.dev.vars` sets `mock` for local work.
 
 ### 5. Connect GitHub (Workers Builds)
 
@@ -131,7 +133,7 @@ Push to `main` and the site rebuilds.
 1. Copy the property object in `src/data/properties.ts` and give it a new slug.
 2. Add its photos to `src/assets/properties/<new-slug>/`.
 3. Run `node scripts/map-tiles.mjs` for its map.
-4. Add its Smoobu apartment id to `SMOOBU_APARTMENT_IDS` (`node scripts/smoobu-apartments.mjs` lists them) and its arrival details to `ARRIVAL_INFO`.
+4. Add its Guesty iCal link to `ICAL_URLS`, its rates to `src/config/rates.ts` and its arrival details to `ARRIVAL_INFO`.
 
 Pages, sitemap, structured data and the booking flow pick it up automatically.
 

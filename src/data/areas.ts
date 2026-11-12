@@ -1,4 +1,5 @@
-// Area guides, one page each at /areas/<slug>. Picks come from the hosts' own guidebook.
+// Area guides. Their page (/areas/<slug>) was taken off the site on 2 Nov 2026; src/pages/areas/[slug].astro
+// is in git history to bring back. Picks come from the hosts' own guidebook.
 // Still to add is marked TO ADD in the comments. A section with no intro and no items is hidden,
 // and a place with no note shows its name alone. Bus routes come from src/data/todo.ts.
 

@@ -142,8 +142,8 @@ section('Quotes');
 
   const n89 = (await api('POST', '/api/quote', { slug: SLUG, checkIn: d(1), checkOut: addDays(d(1), 89), guests: 2 })).data;
   const n90 = (await api('POST', '/api/quote', { slug: SLUG, checkIn: d(1), checkOut: addDays(d(1), 90), guests: 2 })).data;
-  check('90 nights refused', !n90.ok && /90 nights/.test(n90.errors[0]), n90.errors?.[0]);
-  check('89 nights not refused for length', !(n89.errors ?? []).some((e) => /90 nights/.test(e)));
+  check('90 nights refused', !n90.ok && /over 89 nights/.test(n90.errors[0]), n90.errors?.[0]);
+  check('89 nights not refused for length', !(n89.errors ?? []).some((e) => /over 89 nights/.test(e)));
   const pastQ = (await api('POST', '/api/quote', { slug: SLUG, checkIn: addDays(today, -1), checkOut: addDays(today, 2), guests: 2 })).data;
   check('past check-in refused', !pastQ.ok && /passed/.test(pastQ.errors[0]));
   const far = (await api('POST', '/api/quote', { slug: SLUG, checkIn: addDays(today, 370), checkOut: addDays(today, 373), guests: 2 })).data;

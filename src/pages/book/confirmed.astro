@@ -2,6 +2,7 @@
 // After payment (Stripe returns here with ?session_id=) or after a booking request (?ref=).
 import Base from '../../layouts/Base.astro';
 import { site } from '../../config/site';
+import { properties } from '../../data/properties';
 ---
 
 <Base title="Your booking" description="Your booking with Two Rivers Living." noindex>
@@ -34,7 +35,7 @@ import { site } from '../../config/site';
       <h1>We couldn't confirm this booking</h1>
       <p class="lead">While you were paying, the last of those nights was booked by another guest. We've refunded the full amount to your card. It usually shows within 5 to 10 working days.</p>
       <p>We're sorry. If you'd like to look at other dates, email <a href={`mailto:${site.email}`}>{site.email}</a> and we'll help.</p>
-      <a class="button" href="/stays">See available dates</a>
+      <a class="button" href={`/stays/${properties[0].slug}`}>See available dates</a>
     </div>
 
     <div data-state="error" hidden>
@@ -46,6 +47,7 @@ import { site } from '../../config/site';
 </Base>
 
 <script>
+  import { booking } from '../../config/booking';
   import { bookingRows, fmtDeadline, type PublicBooking } from '../../scripts/booking';
 
   const root = document.querySelector<HTMLElement>('[data-confirmed]')!;
@@ -63,7 +65,7 @@ import { site } from '../../config/site';
       cancel.textContent =
         new Date(b.freeCancellationUntil) > new Date()
           ? `You can cancel for a full refund until ${fmtDeadline(b.freeCancellationUntil)}.`
-          : 'Your stay starts within the free cancellation window, so this booking is non-refundable.';
+          : `Your stay starts in less than ${booking.freeCancellationDays} days, so this booking can't be refunded if you cancel.`;
     }
     show(state);
   };

@@ -16,7 +16,7 @@ interface Props {
 
 const { property: p } = Astro.props;
 const offered = extras.filter((e) => p.extras.includes(e.id));
-const arrivalTimes = ['15:00 to 16:00', '16:00 to 17:00', '17:00 to 18:00', '18:00 to 19:00', '19:00 to 20:00', '20:00 to 21:00', '21:00 to 22:00', 'After 22:00', 'Not sure yet'];
+const arrivalTimes = ['3pm to 4pm', '4pm to 5pm', '5pm to 6pm', '6pm to 7pm', '7pm to 8pm', '8pm to 9pm', '9pm to 10pm', 'After 10pm', 'Not sure yet'];
 const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
 ---
 
@@ -53,7 +53,7 @@ const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
                     <strong>{e.label}</strong>
                     <span class="small muted">{e.description}</span>
                   </span>
-                  <span class="extra__price">£{e.price / 100}{e.per === 'night' ? ' a night' : ''}</span>
+                  <span class="extra__price">£{e.price / 100} {e.per === 'night' ? 'a night' : 'per stay'}</span>
                 </label>
               ))
             }
@@ -234,8 +234,8 @@ const card = p.photos.find((ph) => ph.file === p.cardPhoto) ?? p.photos[0];
     const deadline = londonTime(deadlineDay, root.dataset.checkinTime!);
     document.querySelector('[data-sum-cancel]')!.textContent =
       deadline > new Date()
-        ? `Free cancellation until ${fmtDeadline(deadline.toISOString())}.`
-        : `Your stay starts within ${root.dataset.cancelDays} days, so this booking can't be refunded if you cancel.`;
+        ? `You can cancel for a full refund until ${fmtDeadline(deadline.toISOString())}.`
+        : `Your stay starts in less than ${root.dataset.cancelDays} days, so this booking can't be refunded if you cancel.`;
   }
 
   /** A London wall-clock time as a Date (London is UTC or UTC+1). */

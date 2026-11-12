@@ -1,5 +1,5 @@
 ---
-import { site } from '../config/site';
+import { filled, site } from '../config/site';
 import { properties } from '../data/properties';
 import { todo } from '../data/todo';
 
@@ -17,7 +17,6 @@ const columns = [
     title: 'Company',
     links: [
       { href: '/about', label: 'About us' },
-      { href: '/areas/stoke-newington', label: 'Stoke Newington guide' },
       { href: '/faq', label: 'Questions' },
       { href: '/contact', label: 'Contact' },
     ],
@@ -62,7 +61,10 @@ const columns = [
       }
     </div>
 
-    <p class="footer__legal mono">{site.legalName} · London</p>
+    <p class="footer__legal mono">
+      {site.legalName} · {filled(site.companyNumber) ? `Registered in England and Wales, company no. ${site.companyNumber}` : 'London'}
+      {filled(site.registeredOffice) && ` · Registered office: ${site.registeredOffice}`}
+    </p>
   </div>
 </footer>
 

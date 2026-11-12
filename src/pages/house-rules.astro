@@ -1,6 +1,6 @@
 ---
 import Legal from '../layouts/Legal.astro';
-import { booking } from '../config/booking';
+import { booking, clock } from '../config/booking';
 import { site } from '../config/site';
 import { properties } from '../data/properties';
 
@@ -35,7 +35,7 @@ const multiple = properties.length > 1;
       Check-in is self check-in with a key lockbox. We email the address, the lockbox code and directions 48 hours before you arrive.
       Please don't share the code with anyone outside your group.
     </li>
-    <li>Please leave by {booking.checkOutTime} on your last day, unless you've booked late checkout. Leaving instructions are in your arrival email.</li>
+    <li>Please leave by {clock(booking.checkOutTime)} on your last day, unless you've booked late checkout. Leaving instructions are in your arrival email.</li>
   </ul>
 
   <h2>Guests</h2>
@@ -46,7 +46,7 @@ const multiple = properties.length > 1;
 
   <h2>Noise and neighbours</h2>
   <p>
-    Please keep noise down from 22:00 to 08:00, and be considerate in the shared entrance and stairs at any time. Our neighbours are the
+    Please keep noise down from 10pm to 8am, and be considerate in the shared entrance and stairs at any time. Our neighbours are the
     reason the flat is a quiet place to stay.
   </p>
 

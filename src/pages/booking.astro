@@ -67,7 +67,7 @@ import { site } from '../config/site';
     if (b.status === 'confirmed') {
       policy.textContent = open
         ? `You can cancel for a full refund of ${gbp(b.total)} until ${fmtDeadline(b.freeCancellationUntil)}.`
-        : 'Free cancellation has closed for this booking, so it can no longer be refunded online. If your plans have changed, email us and we will see what we can do.';
+        : 'The full refund window has closed for this booking, so it can no longer be refunded online. If your plans have changed, email us and we will see what we can do.';
       cancelBtn.textContent = `Cancel and refund ${gbp(b.total)}`;
     } else if (b.status === 'requested') {
       policy.textContent = 'Nothing has been charged. You can withdraw the request at any time.';

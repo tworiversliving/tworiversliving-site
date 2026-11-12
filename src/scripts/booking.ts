@@ -1,4 +1,5 @@
 // Browser helpers shared by the booking panel, checkout, confirmation and manage-booking pages.
+import { clock } from '../config/booking';
 
 export interface SiteConfig {
   mode: 'instant' | 'request';
@@ -31,10 +32,10 @@ const DAY_LONG = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numer
 export const fmtDate = (iso: string) => DAY.format(new Date(`${iso}T00:00:00Z`));
 export const fmtDateLong = (iso: string) => DAY_LONG.format(new Date(`${iso}T00:00:00Z`));
 
-/** "15:00 on Sunday 1 November 2026", in London time. */
+/** "3pm on Sunday 1 November 2026", in London time. */
 export function fmtDeadline(isoTimestamp: string) {
   const d = new Date(isoTimestamp);
-  const time = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }).format(d);
+  const time = clock(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/London' }).format(d));
   const day = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/London' }).format(d);
   return `${time} on ${day}`;
 }
@@ -89,8 +90,8 @@ export function bookingRows(b: PublicBooking): string {
   const rows: [string, string][] = [
     ['Booking reference', b.ref],
     ['Home', b.propertyName],
-    ['Check-in', `${fmtDateLong(b.checkIn)} from ${b.checkInTime}`],
-    ['Checkout', `${fmtDateLong(b.checkOut)} by ${b.checkOutTime}`],
+    ['Check-in', `${fmtDateLong(b.checkIn)} from ${clock(b.checkInTime)}`],
+    ['Checkout', `${fmtDateLong(b.checkOut)} by ${clock(b.checkOutTime)}`],
     ['Guests', String(b.guests)],
     [plural(b.nights, 'night'), gbp(b.subtotal)],
     ...(b.discount ? [['Direct booking discount', `−${gbp(b.discount)}`] as [string, string]] : []),

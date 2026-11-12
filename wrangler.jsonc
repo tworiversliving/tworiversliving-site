@@ -1,32 +1,43 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tworiversliving",
-  "main": "./dist/_worker.js/index.js",
-  "compatibility_date": "2026-10-01",
-  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  "assets": { "binding": "ASSETS", "directory": "./dist" },
-  "observability": { "enabled": true },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "tworivers",
-      // Replace with the id printed by: npx wrangler d1 create tworivers
-      "database_id": "00000000-0000-0000-0000-000000000000",
-      "migrations_dir": "migrations"
-    }
-  ],
-  // Daily at 09:00 UTC: pre-arrival, check-in and thank-you emails, and clearing old holds.
-  "triggers": { "crons": ["0 9 * * *"] },
-  "vars": {
-    "SITE_URL": "https://tworiversliving.co.uk",
-    "PMS_PROVIDER": "mock",
-    "DIRECT_DISCOUNT": "0.10",
-    "EMAIL_FROM": "Two Rivers Living <stay@tworiversliving.co.uk>",
-    "HOST_EMAIL": "stay@tworiversliving.co.uk"
-  }
-  // Secrets (set with `npx wrangler secret put NAME`, never committed):
-  // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PUBLISHABLE_KEY (instant booking needs all three)
-  // SMOOBU_API_KEY, SMOOBU_API_SECRET, SMOOBU_APARTMENT_IDS (JSON: {"stoke-newington-3-bed": 123456})
-  // ICAL_URLS (JSON, only if PMS_PROVIDER=ical), RESEND_API_KEY, TURNSTILE_SECRET_KEY,
-  // TURNSTILE_SITE_KEY, SLACK_WEBHOOK_URL, ARRIVAL_INFO (JSON)
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "tworiversliving",
+	"main": "./dist/_worker.js/index.js",
+	"compatibility_date": "2026-10-01",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	"assets": {
+		"binding": "ASSETS",
+		"directory": "./dist"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "tworivers",
+			// From: npx wrangler d1 create tworivers (12 Nov 2026). The code uses the DB binding.
+			"database_id": "e807f386-3325-4336-8626-0bebeb68cc1d",
+			"migrations_dir": "migrations"
+		}
+	],
+	// Daily at 09:00 UTC: pre-arrival, check-in and thank-you emails, and clearing old holds.
+	"triggers": {
+		"crons": [
+			"0 9 * * *"
+		]
+	},
+	"vars": {
+		"SITE_URL": "https://tworiversliving.co.uk",
+		"PMS_PROVIDER": "ical",
+		"DIRECT_DISCOUNT": "0.10",
+		"EMAIL_FROM": "Two Rivers Living <stay@tworiversliving.co.uk>",
+		"HOST_EMAIL": "stay@tworiversliving.co.uk"
+	}
+	// Secrets (set with `npx wrangler secret put NAME`, never committed):
+	// STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PUBLISHABLE_KEY (instant booking needs all three)
+	// ICAL_URLS (JSON: {"stoke-newington-3-bed": "<Guesty iCal export link>"}), RESEND_API_KEY, TURNSTILE_SECRET_KEY,
+	// TURNSTILE_SITE_KEY, SLACK_WEBHOOK_URL, ARRIVAL_INFO (JSON)
 }

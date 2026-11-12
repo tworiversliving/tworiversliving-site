@@ -171,6 +171,18 @@ Fixed in this phase:
 
 **Open from Phase 6:** photos still to shoot (hosts, Church Street, Clissold Park, station, working nearby); until then those slots are left out and the area guide reads thin. The guidebook picks for the area guide (`TO ADD` in src/data/areas.ts). /book-direct says "Payments are handled by Stripe" while the site still runs in request mode. The share card bakes in £216, so it goes stale if the from price changes and nobody re-runs the script. Safe-area spacing was checked in the CSS, not on a real iPhone.
 
+## Homepage carousels (31 Oct 2026)
+
+Owner's request after Phase 6. The hero is a PhotoCarousel with one main photo per room (a bedroom's `sleeping[].photo`, otherwise its first non-TV photo), opening on the living room. "The flat" shows each room as a PhotoCard in a SwipeRow, with that room's fact as the card's mono line and the hero's photo last in each card; laundry and access sit in a line under the row. The old 4-photo strip is gone. SwipeRow gained arrow buttons for mouse users (on by default) and its counter follows the first card in view. PhotoCard's footer link is optional. New rooms or photos in properties.ts appear here on their own.
+
+## Focus carousel (1 Nov 2026)
+
+"The flat" room cards (SwipeRow of PhotoCards) replaced by `src/components/FocusCarousel.astro` on forest ground, "Inside the *flat*", between the flat's heading and the laundry/access line. From 900px the active room is 720 x 480 in the centre and the rest 300 x 380 at 45%; below that it is native scroll-snap at 82% (max 460px), 4:5. Same room data as before (`roomCards` in index.astro). Clicking the active photo or its arrows steps through that room's photos; "View all photos" links to `/stays/<slug>#photos-<room>`, which now opens the property page's viewer at that room. New token `--r-photo` (12px, 16px from 900px), used only here; this overrides BRIEF.md's "no radius on photos" for this component. Photo.astro gained `priority` (fetchpriority without eager). SwipeRow.astro is deleted; PhotoCard stays for the property page. qa.mjs reports two `img-oversize` warnings at 1440: inactive slides load the 720px image they grow into, on purpose.
+
+## Area guide taken down (2 Nov 2026)
+
+Owner's call: not needed for now. The homepage's "A minute from Church Street" section and the /areas/stoke-newington page are gone, along with the header, footer and property-page links to it (/areas/stoke-newington now 404s; the site isn't live, so no redirect). The guide's content stays in src/data/areas.ts; restore src/pages/areas/[slug].astro from git and the three links to bring it back. The property page's own "Where it is" map and distances are unchanged.
+
 ## Testing Stripe locally
 
 1. Put the test keys from dashboard.stripe.com/test/apikeys in .dev.vars: `STRIPE_SECRET_KEY=sk_test_...` and `STRIPE_PUBLISHABLE_KEY=pk_test_...`.

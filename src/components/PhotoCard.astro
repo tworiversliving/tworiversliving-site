@@ -18,7 +18,7 @@ interface Props {
   note?: string;
   /** Footer button opens the all-photos viewer at this section id. */
   viewerId?: string;
-  /** Or the footer links here. */
+  /** Or the footer links here. With neither, the footer shows only the note. */
   href?: string;
   linkLabel?: string;
   sizes?: string;
@@ -33,7 +33,7 @@ const {
   note = `${photos.length} ${photos.length === 1 ? 'photo' : 'photos'}`,
   viewerId,
   href,
-  linkLabel = href ? 'View the flat' : 'See photos',
+  linkLabel = href ? 'View the flat' : viewerId ? 'See photos' : undefined,
   sizes = '(min-width: 960px) 280px, (min-width: 640px) 33vw, 84vw',
 } = Astro.props;
 ---
@@ -52,11 +52,11 @@ const {
           <a class="photo-card__all" href={href}>
             {linkLabel}
           </a>
-        ) : (
+        ) : viewerId ? (
           <button type="button" class="photo-card__all" data-open-photos={viewerId}>
             {linkLabel}
           </button>
-        )
+        ) : null
       }
     </div>
   </div>
