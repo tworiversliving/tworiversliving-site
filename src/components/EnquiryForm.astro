@@ -14,6 +14,8 @@ const isWork = type === 'work';
 const maxGuests = Math.max(...properties.map((p) => p.guests));
 ---
 
+<!-- One wrapper, so the form and its thank-you take the same place in the page layout -->
+<div class="enquiry">
 <form class="form" method="post" action="/api/enquiry" data-enquiry>
   <input type="hidden" name="type" value={type} data-type />
   {properties.length === 1 && <input type="hidden" name="property" value={properties[0].slug} />}
@@ -95,8 +97,9 @@ const maxGuests = Math.max(...properties.map((p) => p.guests));
 </form>
 
 <div class="sent" data-sent tabindex="-1" hidden>
-  <h3 class="h3">Thanks, we have your {isWork ? 'enquiry' : 'message'}</h3>
-  <p>We've emailed you a copy. We reply within a few hours.</p>
+  <h3 class="sent__title">Thanks, we have your <em>{isWork ? 'enquiry' : 'message'}</em></h3>
+  <p class="sent__lead">We've emailed you a copy. We reply within a few hours, between 8am and 10pm.</p>
+</div>
 </div>
 
 <script>
@@ -154,6 +157,10 @@ const maxGuests = Math.max(...properties.map((p) => p.guests));
     display: grid;
     gap: var(--s3);
   }
+  /* display: grid would otherwise beat the hidden attribute once the enquiry is sent */
+  .form[hidden] {
+    display: none;
+  }
   .row {
     display: grid;
     gap: var(--s3);
@@ -191,12 +198,22 @@ const maxGuests = Math.max(...properties.map((p) => p.guests));
   }
   /* No box: a forest rule above, like a schedule */
   .sent {
-    padding-top: var(--s3);
+    padding-top: var(--s4);
     border-top: 1px solid var(--line-strong);
   }
-  .sent p {
+  .sent__title {
+    margin: 0 0 var(--s2);
+    font-family: var(--font-display);
+    font-size: var(--t-h2);
+    font-weight: 400;
+    line-height: 1;
+    color: var(--forest);
+  }
+  .sent__lead {
     margin: 0;
-    color: var(--text-3);
+    max-width: 30em;
+    font-size: var(--t-lead);
+    color: var(--text-2);
   }
   .sent:focus {
     outline: none;

@@ -278,6 +278,13 @@ hr {
     gap: var(--s8);
   }
 }
+/* Once an enquiry form is sent, its thank-you fills the split instead of sitting beside the intro */
+.split:has(> .enquiry [data-sent]:not([hidden])) {
+  grid-template-columns: 1fr;
+}
+.split:has(> .enquiry [data-sent]:not([hidden])) > :first-child {
+  display: none;
+}
 .split > h2,
 .split > :first-child h2 {
   font-size: var(--t-h3);
