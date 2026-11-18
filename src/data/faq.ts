@@ -20,8 +20,8 @@ export const faqGroups: { title: string; items: Faq[] }[] = [
     title: 'Booking',
     items: [
       {
-        q: 'Is it cheaper to book here than on Airbnb or Booking.com?',
-        a: 'Yes. Our direct nightly rate is always lower than the price on the booking platforms, and there is no booking or service fee on top. The price you see is the price you pay.',
+        q: 'Why book here rather than on Airbnb or Booking.com?',
+        a: 'You book straight with us, with no booking, service or cleaning fee on top. The price you see is the price you pay, and you deal with us directly from your first question to checkout.',
         home: true,
       },
       {

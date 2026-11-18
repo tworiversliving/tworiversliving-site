@@ -204,7 +204,7 @@ export const emails = {
   thankYou(env: Env, b: BookingRow) {
     const { html, text } = layout(env, [
       `Hi ${b.first_name},`,
-      `Thanks for staying with us. If you come back to London, book on ${env.SITE_URL} for our best price, or reply to this email and we'll hold dates for you.`,
+      `Thanks for staying with us. If you come back to London, book direct on ${env.SITE_URL}, or reply to this email and we'll hold dates for you.`,
       `${site.hosts}`,
     ]);
     return { to: b.email, subject: 'Thanks for staying with us', html, text };

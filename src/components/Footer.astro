@@ -3,6 +3,15 @@ import { filled, site } from '../config/site';
 import { properties } from '../data/properties';
 import { todo } from '../data/todo';
 
+// Companies Act: name, place of registration, number and registered office, once they are filled in
+const legalLine = [
+  site.legalName,
+  filled(site.companyNumber) ? `Registered in England and Wales, company no. ${site.companyNumber}` : 'London',
+  filled(site.registeredOffice) && `Registered office: ${site.registeredOffice}`,
+]
+  .filter(Boolean)
+  .join(' · ');
+
 const columns = [
   {
     title: 'Stay',
@@ -61,10 +70,7 @@ const columns = [
       }
     </div>
 
-    <p class="footer__legal mono">
-      {site.legalName} · {filled(site.companyNumber) ? `Registered in England and Wales, company no. ${site.companyNumber}` : 'London'}
-      {filled(site.registeredOffice) && ` · Registered office: ${site.registeredOffice}`}
-    </p>
+    <p class="footer__legal mono">{legalLine}</p>
   </div>
 </footer>
 
