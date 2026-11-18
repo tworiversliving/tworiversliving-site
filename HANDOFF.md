@@ -122,7 +122,7 @@ node scripts/test-booking.mjs http://localhost:8799
 
 **Deploy order:** D1 + remote migrations → secrets → Workers Builds (README step 5, project name `tworiversliving`) → custom domain and www redirect (README step 6) → Resend domain → Stripe live webhook once verified → `indexable: true`, sitemap to Search Console.
 
-**Resend DNS.** Add the domain in Resend, region EU. Copy the records Resend shows into Cloudflare DNS, all **DNS only** (grey cloud): an MX and TXT (SPF) on the `send` subdomain, and the DKIM TXT at `resend._domainkey`. These sit on subdomains, so they don't clash with Zoho's MX and SPF on the root. Add DMARC once: TXT `_dmarc` = `v=DMARC1; p=none; rua=mailto:stay@tworiversliving.co.uk`, then move to `p=quarantine` after a few clean weeks. Check with mail-tester.com or Gmail "Show original" (SPF, DKIM and DMARC all PASS).
+**Resend DNS.** Add the domain in Resend, region EU. Copy the records Resend shows into Cloudflare DNS, all **DNS only** (grey cloud): an MX and TXT (SPF) on the `send` subdomain, and the DKIM TXT at `resend._domainkey`. These sit on subdomains, so they don't clash with Google Workspace's MX and SPF on the root (email moved from Zoho to Google Workspace, 18 Nov 2026). Add DMARC once: TXT `_dmarc` = `v=DMARC1; p=none; rua=mailto:stay@tworiversliving.co.uk`, then move to `p=quarantine` after a few clean weeks. Check with mail-tester.com or Gmail "Show original" (SPF, DKIM and DMARC all PASS).
 
 **After deploy, test with the owner:**
 
