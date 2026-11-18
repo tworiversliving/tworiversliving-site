@@ -32,7 +32,7 @@
 	"vars": {
 		"SITE_URL": "https://tworiversliving.co.uk",
 		"PMS_PROVIDER": "ical",
-		"DIRECT_DISCOUNT": "0.10",
+		"DIRECT_DISCOUNT": "0",
 		"EMAIL_FROM": "Two Rivers Living <stay@tworiversliving.co.uk>",
 		"HOST_EMAIL": "stay@tworiversliving.co.uk"
 	}

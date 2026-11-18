@@ -107,7 +107,7 @@ section('Availability');
   check('returns a calendar', r.status === 200 && r.data.days.length === 27);
   check('blocked PMS nights are unavailable', day(9).available === false && day(23).available === false);
   check('free nights are available with a price', day(3).available === true && day(3).price > 0);
-  check('direct price is 10% under the PMS price', day(3).price === 21600 || day(3).price === 24750, `got ${day(3).price}`);
+  check('direct price is the rates.ts price (no discount)', day(3).price === 22000 || day(3).price === 25000, `got ${day(3).price}`);
   check('minimum stay is reported', day(3).minStay === 2);
   check('unknown property is a 404', (await api('GET', '/api/availability?slug=nope')).status === 404);
   check('bad range refused', (await api('GET', `/api/availability?slug=${SLUG}&from=${d(5)}&to=${d(2)}`)).status === 400);
@@ -119,7 +119,7 @@ section('Quotes');
 {
   const q = (await api('POST', '/api/quote', { slug: SLUG, checkIn: d(1), checkOut: d(4), guests: 2 })).data;
   check('3 free nights quote ok', q.ok && q.mode === 'instant' && q.nightCount === 3);
-  check('discount = subtotal - stay', q.discount === q.subtotal - q.stay && Math.round(q.subtotal * 0.1) === q.discount);
+  check('no discount: stay = subtotal', q.discount === 0 && q.stay === q.subtotal);
   check('total = stay + extras', q.total === q.stay + q.extrasTotal);
   const qx = (await api('POST', '/api/quote', { slug: SLUG, checkIn: d(1), checkOut: d(4), guests: 2, extras: ['parking'] })).data;
   check('parking adds £15', qx.extrasTotal === 1500 && qx.total === q.total + 1500);

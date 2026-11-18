@@ -60,7 +60,7 @@ export interface Property {
   ogPhoto: string;
   reviews: Review[];
   ratings: Rating[];
-  /** Shown on cards until the live price loads. In pounds, after the direct discount. */
+  /** Shown until the live price loads, and on the share card. In pounds, the cheapest night in src/config/rates.ts. */
   fromPriceFallback: number;
   /** Rough location for the map: a circle, never the exact building. */
   map: { lat: number; lng: number; radiusM: number };
@@ -176,7 +176,7 @@ export const properties: Property[] = [
       { platform: 'Airbnb', score: 4.8, outOf: 5, count: 5 },
       { platform: 'Booking.com', score: 9, outOf: 10, count: 2 },
     ],
-    fromPriceFallback: 216,
+    fromPriceFallback: 220,
     map: { lat: 51.5628, lng: -0.0742, radiusM: 400 },
   },
 ];
